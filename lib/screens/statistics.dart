@@ -11,11 +11,62 @@ class StatisticsScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               SizedBox(height: 20),
+              Container(
+                padding: EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Color(0xFF323236),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Total Earnings',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        Text(
+                          '\$96,470', // Total earnings figure
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: 8),
+                    Text(
+                      'Lifetime',
+                      style: TextStyle(
+                        color: Color(0xFF6E6E73),
+                        fontSize: 14,
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        buildSummaryColumn('Sales', '67 735'),
+                        buildSummaryColumn('Commissions', '28 735'),
+                        buildSummaryColumn('Clicks', '800K'),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: 20),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   Text(
-                    'Daily',
+                    'Weekly',
                     style: TextStyle(
                       color: Color(0xFF6E6E73),
                       fontSize: 16,
@@ -30,7 +81,7 @@ class StatisticsScreen extends StatelessWidget {
                       borderRadius: BorderRadius.circular(20.0),
                     ),
                     child: Text(
-                      'Weekly',
+                      'Daily',
                       style: TextStyle(
                         color: Colors.black,
                         fontSize: 16,
@@ -59,44 +110,6 @@ class StatisticsScreen extends StatelessWidget {
                 ),
               ),
               SizedBox(height: 20),
-              Container(
-                padding: EdgeInsets.all(20),
-                decoration: BoxDecoration(
-                  color: Color(0xFF323236),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Physical Activity',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    SizedBox(height: 8),
-                    Text(
-                      'Total for the week',
-                      style: TextStyle(
-                        color: Color(0xFF6E6E73),
-                        fontSize: 14,
-                      ),
-                    ),
-                    SizedBox(height: 16),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        buildSummaryColumn('Steps', '67 735'),
-                        buildSummaryColumn('Calories burned', '28 735'),
-                        buildSummaryColumn('Training time', '8h 37min'),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              SizedBox(height: 20),
               Expanded(
                 child: GridView.count(
                   crossAxisCount: 2,
@@ -104,12 +117,13 @@ class StatisticsScreen extends StatelessWidget {
                   mainAxisSpacing: 16,
                   children: [
                     buildStatCard(
-                        'Steps', '8 796', 'Goal is 8 000 steps', true),
+                        'Sales', '8 796', 'Goal is 8 000K', true),
                     buildStatCard(
-                        'Calories', '700', 'Goal is 850 calories', false),
+                        'Commissions', '700', 'Goal is 850', false),
                     buildStatCard(
-                        'Heart rate', '75 bpm', 'Goal met', true),
-                    buildStatCard('Sleep hours', '6h 50m', 'Goal is 8h', false),
+                        'Sale Amount', '75 000', 'Goal met', true),
+                    buildStatCard(
+                        'Clicks', '60K', 'Goal is 80K', false),
                   ],
                 ),
               ),
