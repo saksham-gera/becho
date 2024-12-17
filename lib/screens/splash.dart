@@ -21,10 +21,12 @@ class _SplashScreenState extends State<SplashScreen> {
 
   Future<void> _checkToken() async {
     final prefs = await SharedPreferences.getInstance();
-    // final token = prefs.getString('token');
-    final token = "asefc";
-    // if (token != null && await _isTokenValid(token)) {
-    if(token != null) {
+    final token = "asefc"; // Replace with prefs.getString('token') for real data.
+
+    // Add delay (e.g., 3 seconds)
+    await Future.delayed(const Duration(seconds: 3));
+
+    if (token != null) {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => const Home()),
@@ -36,6 +38,7 @@ class _SplashScreenState extends State<SplashScreen> {
       );
     }
   }
+
 
   Future<bool> _isTokenValid(String token) async {
     try {
