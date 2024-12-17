@@ -180,7 +180,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
             ),
             Container(
               width: double.infinity,
-              margin: const EdgeInsets.only(bottom: 30),
+              margin: const EdgeInsets.only(bottom: 35),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 crossAxisAlignment: CrossAxisAlignment.center,
