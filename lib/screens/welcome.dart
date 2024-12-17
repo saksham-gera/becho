@@ -180,7 +180,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
             ),
             Container(
               width: double.infinity,
-              margin: const EdgeInsets.only(bottom: 20),
+              margin: const EdgeInsets.only(bottom: 35),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.end,
                 crossAxisAlignment: CrossAxisAlignment.center,
@@ -191,8 +191,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                     style: TextStyle(
                       fontSize: 50,
                       fontWeight: FontWeight.bold,
-                      fontStyle: FontStyle.italic,
-                      color: Colors.white.withOpacity(0.7),
+                      // fontStyle: FontStyle.italic,
+                      color: Colors.white70.withOpacity(1),
                     ),
                   ),
                   SizedBox(height: 10),
@@ -200,7 +200,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                     'Smart, gorgeous & fashionable \n collection makes you cool',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 16,
+                      fontSize: 17,
                       color: Colors.white,
                     ),
                   ),
@@ -219,6 +219,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                           Icons.keyboard_arrow_up,
                           size: 30,
                           color: Colors.white,
+
                         ),
                         Text(
                           'Get Started',
