@@ -3,6 +3,7 @@ import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'home.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -51,12 +52,16 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
 
   final FlutterSecureStorage secureStorage = FlutterSecureStorage();
 
-  Future<void> storeToken(String token) async {
-    await secureStorage.write(key: 'authToken', value: token);
-    print('Token stored securely.');
+  Future<void> storeToken(String? token) async {
+    if (token != null) {
+      await secureStorage.write(key: 'authToken', value: token);
+      print('Token stored securely.');
+    } else {
+      print('No token to store.');
+    }
   }
 
-  Future<void> _login(String email, String password) async {
+  Future<void> _login(BuildContext context, String email, String password) async {
     const String url = 'https://bechoserver.vercel.app/login';
 
     final body = {
@@ -70,21 +75,35 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(body),
       );
+
       if (response.statusCode == 200) {
         print('Login Successful');
         final responseData = jsonDecode(response.body);
-        String authToken = responseData['token']!;
-        await storeToken(authToken);
+
+        // Safely check if the token exists
+        String? authToken = responseData['token'];
+        if (authToken != null) {
+          await storeToken(authToken);
+          Navigator.pop(context);  // Close the modal sheet first
+
+          // Then navigate to the Home screen
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const Home()),
+          );
+        } else {
+          print('Login failed: Token is missing in the response');
+        }
       } else {
         print('Login Failed: ${response.statusCode}');
         print('Response body: ${response.body}');
       }
     } catch (e) {
-      print('An error occurred: $e');
+      print('An error occurred during login: $e');
     }
   }
 
-  Future<void> _register(String username, String email, String password) async {
+  Future<void> _register(BuildContext context, String username, String email, String password) async {
     const String url = 'https://bechoserver.vercel.app/register';
 
     final body = {
@@ -99,10 +118,31 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(body),
       );
-      print('Response status: ${response.statusCode}');
-      print('Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        print('Registration Successful');
+        final responseData = jsonDecode(response.body);
+
+        // Safely check if the token exists
+        String? authToken = responseData['token'];
+        if (authToken != null) {
+          await storeToken(authToken);
+          Navigator.pop(context);  // Close the modal sheet first
+
+          // Then navigate to the Home screen
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => const Home()),
+          );
+        } else {
+          print('Registration failed: Token is missing in the response');
+        }
+      } else {
+        print('Registration Failed: ${response.statusCode}');
+        print('Response body: ${response.body}');
+      }
     } catch (e) {
-      print('An error occurred: $e');
+      print('An error occurred during registration: $e');
     }
   }
 
@@ -203,17 +243,18 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                           onPressed: () {
                             if (_isSignUp) {
                               _register(
+                                context,
                                 usernameController.text,
                                 emailController.text,
                                 passwordController.text,
                               );
                             } else {
                               _login(
+                                context,
                                 emailController.text,
                                 passwordController.text,
                               );
                             }
-                            Navigator.pop(context);
                           },
                           child: Text(_isSignUp ? 'Sign Up' : 'Login'),
                         ),
