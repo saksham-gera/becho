@@ -18,7 +18,7 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<bool> _isTokenValid(String token) async {
     try {
       final response = await http.get(
-        Uri.parse('https://bechoserver.vercel.app/verify'),
+        Uri.parse('https://bechoserver.vercel.app/users/verify'),
         headers: {'Authorization': 'Bearer $token'},
       ).timeout(const Duration(seconds: 5));
       return response.statusCode == 200;

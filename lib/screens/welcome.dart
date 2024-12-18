@@ -62,7 +62,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
   }
 
   Future<void> _login(BuildContext context, String email, String password) async {
-    const String url = 'https://bechoserver.vercel.app/login';
+    const String url = 'https://bechoserver.vercel.app/auth/login';
 
     final body = {
       'email': email,
@@ -104,7 +104,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
   }
 
   Future<void> _register(BuildContext context, String username, String email, String password) async {
-    const String url = 'https://bechoserver.vercel.app/register';
+    const String url = 'https://bechoserver.vercel.app/auth/register';
 
     final body = {
       'username': username,
