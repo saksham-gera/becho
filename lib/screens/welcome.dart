@@ -1,5 +1,8 @@
+import 'dart:convert';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -11,11 +14,18 @@ class WelcomeScreen extends StatefulWidget {
 class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProviderStateMixin {
   late AnimationController _arrowAnimationController;
   late Animation<double> _arrowAnimation;
+  late TextEditingController usernameController;
+  late TextEditingController emailController;
+  late TextEditingController passwordController;
   bool _isSignUp = false;
 
   @override
   void initState() {
     super.initState();
+
+    usernameController = TextEditingController();
+    emailController = TextEditingController();
+    passwordController = TextEditingController();
 
     _arrowAnimationController = AnimationController(
       duration: const Duration(seconds: 1),
@@ -33,7 +43,67 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
   @override
   void dispose() {
     _arrowAnimationController.dispose();
+    usernameController.dispose();
+    emailController.dispose();
+    passwordController.dispose();
     super.dispose();
+  }
+
+  final FlutterSecureStorage secureStorage = FlutterSecureStorage();
+
+  Future<void> storeToken(String token) async {
+    await secureStorage.write(key: 'authToken', value: token);
+    print('Token stored securely.');
+  }
+
+  Future<void> _login(String email, String password) async {
+    const String url = 'https://bechoserver.vercel.app/login';
+
+    final body = {
+      'email': email,
+      'password': password,
+    };
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+      if (response.statusCode == 200) {
+        print('Login Successful');
+        final responseData = jsonDecode(response.body);
+        String authToken = responseData['token']!;
+        await storeToken(authToken);
+      } else {
+        print('Login Failed: ${response.statusCode}');
+        print('Response body: ${response.body}');
+      }
+    } catch (e) {
+      print('An error occurred: $e');
+    }
+  }
+
+  Future<void> _register(String username, String email, String password) async {
+    const String url = 'https://bechoserver.vercel.app/register';
+
+    final body = {
+      'username': username,
+      'email': email,
+      'password': password,
+    };
+
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(body),
+      );
+      print('Response status: ${response.statusCode}');
+      print('Response body: ${response.body}');
+    } catch (e) {
+      print('An error occurred: $e');
+    }
   }
 
   void _showAuthPopup() {
@@ -51,7 +121,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
           ),
           child: Container(
             constraints: BoxConstraints(
-              maxHeight: MediaQuery.of(context).size.height * (_isSignUp ? 0.6 : 0.4) ,
+              maxHeight: MediaQuery.of(context).size.height * (_isSignUp ? 0.6 : 0.4),
             ),
             decoration: BoxDecoration(
               color: Colors.white,
@@ -88,6 +158,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                         SizedBox(height: 20),
                         if (_isSignUp)
                           CupertinoTextField(
+                            controller: usernameController,
                             placeholder: 'Full Name',
                             padding: EdgeInsets.all(16),
                             decoration: BoxDecoration(
@@ -98,6 +169,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                         if (_isSignUp) SizedBox(height: 20),
                         if (_isSignUp)
                           CupertinoTextField(
+                            controller: emailController,
                             placeholder: 'Phone Number',
                             padding: EdgeInsets.all(16),
                             decoration: BoxDecoration(
@@ -107,6 +179,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                           ),
                         SizedBox(height: 20),
                         CupertinoTextField(
+                          controller: emailController,
                           placeholder: 'Email',
                           padding: EdgeInsets.all(16),
                           decoration: BoxDecoration(
@@ -116,6 +189,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                         ),
                         SizedBox(height: 20),
                         CupertinoTextField(
+                          controller: passwordController,
                           placeholder: 'Password',
                           obscureText: true,
                           padding: EdgeInsets.all(16),
@@ -127,6 +201,18 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                         SizedBox(height: 20),
                         CupertinoButton.filled(
                           onPressed: () {
+                            if (_isSignUp) {
+                              _register(
+                                usernameController.text,
+                                emailController.text,
+                                passwordController.text,
+                              );
+                            } else {
+                              _login(
+                                emailController.text,
+                                passwordController.text,
+                              );
+                            }
                             Navigator.pop(context);
                           },
                           child: Text(_isSignUp ? 'Sign Up' : 'Login'),
@@ -233,8 +319,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> with SingleTickerProvider
                   ),
                 ],
               ),
-            )
-
+            ),
           ],
         ),
       ),

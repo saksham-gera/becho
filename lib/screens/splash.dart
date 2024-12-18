@@ -1,6 +1,6 @@
 import 'package:becho/screens/welcome.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'dart:async';
 import 'package:http/http.dart' as http;
 import 'home.dart';
@@ -13,47 +13,79 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen> {
+  final FlutterSecureStorage secureStorage = const FlutterSecureStorage();
+
+  Future<bool> _isTokenValid(String token) async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://bechoserver.vercel.app/verify'),
+        headers: {'Authorization': 'Bearer $token'},
+      ).timeout(const Duration(seconds: 5));
+      return response.statusCode == 200;
+    } catch (e) {
+      debugPrint('Error validating token: $e');
+      return false;
+    }
+  }
+
+  Future<void> _checkToken() async {
+    String? authToken = await secureStorage.read(key: 'authToken');
+    bool isValid = authToken != null && await _isTokenValid(authToken);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (isValid) {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const Home()),
+        );
+      } else {
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const WelcomeScreen()),
+        );
+      }
+    });
+  }
+
   @override
   void initState() {
     super.initState();
     _checkToken();
   }
 
-  Future<void> _checkToken() async {
-    final prefs = await SharedPreferences.getInstance();
-    // final token = prefs.getString('token');
-    final token = "asefc";
-    // if (token != null && await _isTokenValid(token)) {
-    if(token != null) {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const Home()),
-      );
-    } else {
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const WelcomeScreen()),
-      );
-    }
-  }
-
-  Future<bool> _isTokenValid(String token) async {
-    try {
-      final response = await http.get(
-        Uri.parse('https://example.com/api/validate-token'),
-        headers: {'Authorization': 'Bearer $token'},
-      );
-      return response.statusCode == 200;
-    } catch (e) {
-      return false;
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: CircularProgressIndicator(),
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.blue, Colors.white],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+          ),
+          Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: const [
+              Text(
+                'Becho App',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blueAccent,
+                ),
+              ),
+              SizedBox(height: 20),
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.blueAccent),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

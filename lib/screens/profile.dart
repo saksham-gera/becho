@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'welcome.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class ProfileScreen extends StatelessWidget {
   @override
@@ -145,12 +146,9 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-
-  void _logout(BuildContext context) {
-    // Here you can add your logout logic. For example, clearing user session data,
-    // removing authentication tokens, or navigating to the login screen.
-
-    // Example of navigating to a login screen (you can replace this with your actual login screen).
+  final FlutterSecureStorage secureStorage = FlutterSecureStorage();
+  Future<void> _logout(BuildContext context) async {
+    await secureStorage.delete(key: 'authToken');
     Navigator.pushReplacement(
       context,
       MaterialPageRoute(builder: (context) => const WelcomeScreen()),
