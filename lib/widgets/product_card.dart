@@ -47,11 +47,10 @@ class ProductCard extends StatelessWidget {
             Expanded(
               child: Container(
                 decoration: BoxDecoration(
-                  color: Colors.grey.shade200,
                   borderRadius: BorderRadius.circular(12),
                   image: DecorationImage(
                     image: NetworkImage(product.imageUrl),
-                    fit: BoxFit.cover,
+                    fit: BoxFit.contain,
                   ),
                 ),
               ),
@@ -99,7 +98,7 @@ class ProductCard extends StatelessWidget {
                       decoration: TextDecoration.lineThrough,
                     ),
                   ),
-                  const SizedBox(width: 8),
+                  const SizedBox(width: 4),
                   Text(
                     '\$${discountedPrice.toStringAsFixed(2)}',
                     style: const TextStyle(
@@ -108,9 +107,9 @@ class ProductCard extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 3),
                   Text(
-                    '(${product.discount} off)',
+                    '(${product.discount}% off)',
                     style: const TextStyle(
                       fontSize: 12,
                       color: Colors.red,

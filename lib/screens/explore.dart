@@ -17,154 +17,186 @@ class _ExploreScreenState extends State<ExploreScreen> {
   bool hasResults = true;
   String selectedSort = 'Price Low to High';
   String selectedFilter = 'All';
+  Map<String, String?> filters = {
+    'category': null,
+    'minPrice': null,
+    'maxPrice': null,
+    'ratings': null,
+    'discount': null,
+  };
+
+  double selectedMinPrice = 0;
+  double selectedMaxPrice = 1000;
+  double minPrice = 0;
+  double maxPrice = 1000;
 
   @override
   void initState() {
     super.initState();
-    products = List.generate(
-      18,
-          (index) => ProductModel(
-        id: '$index',
-        title: 'Placeholder Product $index',
-        description: 'This is a placeholder description for product $index.',
-        mrp: '\$${(index + 1) * 50}',
-        discount: index % 2 == 0 ? '10%' : '0%', // 10% discount for even indices
-        ratings: (index % 5 + 1).toString(),
-        imageUrl: 'https://via.placeholder.com/150',
-      ),
-    );
+    _fetchProducts();
   }
 
-  Future<void> _searchProducts(String query) async {
-    if (query.isEmpty) {
-      setState(() {
-        products = List.generate(
-          18,
-              (index) => ProductModel(
-            id: '$index',
-            title: 'Placeholder Product $index',
-            description: 'This is a placeholder description for product $index.',
-            mrp: '\$${(index + 1) * 50}',
-            discount: index % 2 == 0 ? '10%' : '0%',
-            ratings: (index % 5 + 1).toString(),
-            imageUrl: 'https://via.placeholder.com/150',
-          ),
-        );
-        isSearching = false;
-        hasResults = true;
-      });
-      return;
-    }
-
+  Future<void> _fetchProducts({String? query}) async {
     setState(() {
       isSearching = true;
     });
 
-    final response = await http.get(Uri.parse('https://api.example.com/search?query=$query'));
+    // Build the query parameters
+    Map<String, String> queryParams = {};
+    if (query != null && query.isNotEmpty) {
+      queryParams['query'] = query;
+    }
+    filters.forEach((key, value) {
+      if (value != null && value.isNotEmpty) {
+        queryParams[key] = value;
+      }
+    });
+
+    // Add the selected price range to the queryParams
+    queryParams['minPrice'] = selectedMinPrice.toString();
+    queryParams['maxPrice'] = selectedMaxPrice.toString();
+
+    final uri = Uri.https('bechoserver.vercel.app', '/products', queryParams);
+    final response = await http.get(uri);
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      if (data['products'].isEmpty) {
-        setState(() {
+      setState(() {
+        if (data['data'].isEmpty) {
           products = [];
           hasResults = false;
-        });
-      } else {
-        setState(() {
+        } else {
           products = List<ProductModel>.from(
-            data['products'].map((product) => ProductModel.fromJson(product)),
+            data['data'].map((product) => ProductModel.fromJson(product)),
           );
           hasResults = true;
-        });
-      }
+        }
+        isSearching = false;
+      });
     } else {
       setState(() {
         products = [];
         hasResults = false;
+        isSearching = false;
       });
     }
   }
 
-  void _showSortBottomSheet() {
+  void _showFilterSheet() {
     showModalBottomSheet(
       context: context,
+      isScrollControlled: true,
       builder: (context) {
-        return Container(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildSortOption('Price Low to High'),
-              _buildSortOption('Price High to Low'),
-              _buildSortOption('New Arrivals'),
-            ],
-          ),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildExpandableFilter(
+                      title: "Price Range",
+                      content: Column(
+                        children: [
+                          Text(
+                            'Selected Range: \$${selectedMinPrice.round()} - \$${selectedMaxPrice.round()}',
+                          ),
+                          RangeSlider(
+                            values: RangeValues(selectedMinPrice, selectedMaxPrice),
+                            min: minPrice,
+                            max: maxPrice,
+                            divisions: 100,
+                            labels: RangeLabels(
+                              '\$${selectedMinPrice.round()}',
+                              '\$${selectedMaxPrice.round()}',
+                            ),
+                            onChanged: (values) {
+                              setState(() {
+                                selectedMinPrice = values.start;
+                                selectedMaxPrice = values.end;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                    _buildExpandableFilter(
+                      title: "Discount",
+                      content: Column(
+                        children: [
+                          _buildRadioFilterOption('15%+', '15', 'discount', setState),
+                          _buildRadioFilterOption('20%+', '20', 'discount', setState),
+                          _buildRadioFilterOption('25%+', '25', 'discount', setState),
+                          _buildRadioFilterOption('40%+', '40', 'discount', setState),
+                        ],
+                      ),
+                    ),
+                    _buildExpandableFilter(
+                      title: "Ratings",
+                      content: Column(
+                        children: [
+                          _buildRadioFilterOption('3+', '3', 'ratings', setState),
+                          _buildRadioFilterOption('4+', '4', 'ratings', setState),
+                          _buildRadioFilterOption('4.5+', '4.5', 'ratings', setState),
+                        ],
+                      ),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        _fetchProducts(); // Apply filters
+                      },
+                      child: const Text('Apply Filters'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          filters = {
+                            'category': null,
+                            'ratings': null,
+                            'discount': null,
+                          };
+                          selectedMinPrice = minPrice;
+                          selectedMaxPrice = maxPrice;
+                        });
+                        Navigator.pop(context);
+                        _fetchProducts(); // Reset filters
+                      },
+                      child: const Text('Reset All Filters'),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
         );
       },
     );
   }
 
-  void _showFilterBottomSheet() {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return Container(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              _buildFilterOption('All'),
-              _buildFilterOption('Category 1'),
-              _buildFilterOption('Category 2'),
-              _buildFilterOption('Category 3'),
-            ],
-          ),
-        );
+  Widget _buildRadioFilterOption(String label, String value, String filterKey, StateSetter setState) {
+    return RadioListTile<String>(
+      title: Text(label),
+      value: value,
+      groupValue: filters[filterKey],
+      onChanged: (selected) {
+        setState(() {
+          filters[filterKey] = selected;
+        });
       },
     );
   }
 
-  Widget _buildSortOption(String option) {
-    return ListTile(
-      title: Text(option),
-      trailing: selectedSort == option
-          ? Icon(Icons.check, color: Colors.blue)
-          : null,
-      onTap: () {
-        setState(() {
-          selectedSort = option;
-        });
-        Navigator.pop(context);
-      },
-    );
-  }
-
-  Widget _buildFilterOption(String option) {
-    return ListTile(
-      title: Text(option),
-      trailing: selectedFilter == option
-          ? Icon(Icons.check, color: Colors.green)
-          : null,
-      onTap: () {
-        setState(() {
-          selectedFilter = option;
-        });
-        Navigator.pop(context);
-      },
+  Widget _buildExpandableFilter({required String title, required Widget content}) {
+    return ExpansionTile(
+      title: Text(title),
+      children: [content],
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
-    double screenHeight = MediaQuery.of(context).size.height;
-
-    double searchBarWidth = isSearching
-        ? screenWidth * 0.58
-        : screenWidth * 0.92;
-
-    double buttonPadding = screenWidth * 0.02;
-
     return Scaffold(
       body: CustomScrollView(
         slivers: [
@@ -178,12 +210,11 @@ class _ExploreScreenState extends State<ExploreScreen> {
                 children: [
                   Row(
                     children: [
-                      Container(
-                        width: searchBarWidth,
+                      Expanded(
                         child: TextField(
                           controller: _searchController,
                           onChanged: (query) {
-                            _searchProducts(query);
+                            _fetchProducts(query: query);
                           },
                           decoration: InputDecoration(
                             hintText: 'Search',
@@ -197,26 +228,11 @@ class _ExploreScreenState extends State<ExploreScreen> {
                           ),
                         ),
                       ),
-                      if (isSearching) ...[
-                        SizedBox(width: buttonPadding),
-                        ElevatedButton(
-                          onPressed: _showSortBottomSheet,
-                          child: Text('Sort'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.blue,
-                            padding: EdgeInsets.symmetric(horizontal: 16),
-                          ),
-                        ),
-                        SizedBox(width: buttonPadding),
-                        ElevatedButton(
-                          onPressed: _showFilterBottomSheet,
-                          child: Text('Filter'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            padding: EdgeInsets.symmetric(horizontal: 16),
-                          ),
-                        ),
-                      ]
+                      SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: _showFilterSheet,
+                        child: Text('Filter'),
+                      ),
                     ],
                   ),
                 ],
