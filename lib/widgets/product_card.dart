@@ -98,7 +98,7 @@ class ProductCard extends StatelessWidget {
                       decoration: TextDecoration.lineThrough,
                     ),
                   ),
-                  const SizedBox(width: 4),
+                  const SizedBox(width: 4 ),
                   Text(
                     '\$${discountedPrice.toStringAsFixed(2)}',
                     style: const TextStyle(

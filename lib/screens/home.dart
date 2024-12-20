@@ -75,7 +75,7 @@ class _HomeState extends State<Home> {
                 DiscoverScreen(),
                 ExploreScreen(),
                 StatisticsScreen(),
-                ShopScreen(),
+                ReelScreen(),
                 ProfileScreen(),
               ],
             ),
