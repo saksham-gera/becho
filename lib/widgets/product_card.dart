@@ -13,11 +13,9 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    double discountedPrice = 0.0;
-    if (product.discount != '0%') {
-      discountedPrice = double.parse(product.mrp.replaceAll('\$', '')) *
-          (1 - double.parse(product.discount.replaceAll('%', '')) / 100);
-    }
+    final double mrp = double.parse(product.mrp.replaceAll('\$', ''));
+    final double discount = double.parse(product.discount.replaceAll('%', ''));
+    final double discountedPrice = mrp * (1 - discount / 100);
 
     return GestureDetector(
       onTap: () {
@@ -67,7 +65,6 @@ class ProductCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 4),
-            // Show ratings
             Row(
               children: [
                 Icon(
@@ -82,23 +79,22 @@ class ProductCard extends StatelessWidget {
                     fontSize: 12,
                     color: CupertinoColors.systemGrey,
                   ),
-                )
+                ),
               ],
             ),
             const SizedBox(height: 4),
-            // Show MRP and discounted price if discount is non-zero
-            if (product.discount != '0%')
+            if (discount > 0)
               Row(
                 children: [
                   Text(
-                    '${product.mrp}',
+                    '\$${mrp.toStringAsFixed(2)}',
                     style: const TextStyle(
                       fontSize: 14,
-                      color: CupertinoColors.activeGreen,
+                      color: CupertinoColors.systemGrey,
                       decoration: TextDecoration.lineThrough,
                     ),
                   ),
-                  const SizedBox(width: 4 ),
+                  const SizedBox(width: 4),
                   Text(
                     '\$${discountedPrice.toStringAsFixed(2)}',
                     style: const TextStyle(
@@ -107,9 +103,9 @@ class ProductCard extends StatelessWidget {
                       fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(width: 3),
+                  const SizedBox(width: 4),
                   Text(
-                    '(${product.discount}% off)',
+                    '(${product.discount} off)',
                     style: const TextStyle(
                       fontSize: 12,
                       color: Colors.red,
@@ -119,7 +115,7 @@ class ProductCard extends StatelessWidget {
               )
             else
               Text(
-                '${product.mrp}',
+                '\$${mrp.toStringAsFixed(2)}',
                 style: const TextStyle(
                   fontSize: 14,
                   color: CupertinoColors.activeGreen,

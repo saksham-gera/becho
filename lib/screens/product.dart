@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class ProductScreen extends StatefulWidget {
-  final String imageUrl =
-      'https://via.placeholder.com/150'; // Replace this with your reference image URL.
   final String productId;
 
   ProductScreen({required this.productId});
@@ -12,15 +12,51 @@ class ProductScreen extends StatefulWidget {
 }
 
 class _ProductScreenState extends State<ProductScreen> {
-  String? selectedStorageOption;
-  String? selectedColorOption;
+  Map<String, dynamic>? productDetails;
+  bool isLoading = true;
+  bool hasError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchProductDetails();
+  }
+
+  Future<void> fetchProductDetails() async {
+    final url = 'https://bechoserver.vercel.app/products/${widget.productId}';
+    try {
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final jsonResponse = json.decode(response.body);
+        print(jsonResponse);
+        setState(() {
+          productDetails = jsonResponse['product'];
+          isLoading = false;
+        });
+      } else {
+        setState(() {
+          hasError = true;
+          isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        hasError = true;
+        isLoading = false;
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Column(
+        child: isLoading
+            ? Center(child: CircularProgressIndicator())
+            : hasError
+            ? Center(child: Text('Failed to load product details'))
+            : Column(
           children: [
             Expanded(
               child: Padding(
@@ -29,9 +65,9 @@ class _ProductScreenState extends State<ProductScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Back and Favorite Buttons
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment:
+                        MainAxisAlignment.spaceBetween,
                         children: [
                           IconButton(
                             icon: Icon(Icons.arrow_back),
@@ -45,110 +81,81 @@ class _ProductScreenState extends State<ProductScreen> {
                           ),
                         ],
                       ),
-
-                      // Product Image
                       Center(
                         child: Image.network(
-                          widget.imageUrl,
+                          productDetails?['image_link'] ?? '',
                           width: 250,
                           height: 250,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) => Container(
-                            width: 250,
-                            height: 250,
-                            color: Colors.grey.shade200,
-                            child: Icon(Icons.broken_image,
-                                size: 50, color: Colors.grey),
-                          ),
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) =>
+                              Container(
+                                width: 250,
+                                height: 250,
+                                color: Colors.grey.shade200,
+                                child: Icon(Icons.broken_image,
+                                    size: 50, color: Colors.grey),
+                              ),
                         ),
                       ),
-
                       SizedBox(height: 16),
-
-                      // Product Title and On Sale Badge
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment:
+                        MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            'Xbox Series X',
+                            productDetails?['title'] ?? 'Product Title',
                             style: TextStyle(
                               fontSize: 22,
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                                horizontal: 8.0, vertical: 4.0),
-                            decoration: BoxDecoration(
-                              color: Colors.red,
-                              borderRadius: BorderRadius.circular(4.0),
+                          if (productDetails?['onSale'] == true)
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 8.0, vertical: 4.0),
+                              decoration: BoxDecoration(
+                                color: Colors.red,
+                                borderRadius:
+                                BorderRadius.circular(4.0),
+                              ),
+                              child: Text(
+                                'On sale',
+                                style:
+                                TextStyle(color: Colors.white),
+                              ),
                             ),
-                            child: Text(
-                              'On sale',
-                              style: TextStyle(color: Colors.white),
-                            ),
+                        ],
+                      ),
+                      SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(Icons.star,
+                              color: Colors.amber, size: 20),
+                          SizedBox(width: 4),
+                          Text('${productDetails?['ratings'] ?? 'N/A'}'),
+                          SizedBox(width: 16),
+                          Icon(Icons.thumb_up,
+                              color: Colors.green, size: 20),
+                          SizedBox(width: 4),
+                          Text(
+                            '(${productDetails?['reviews'] ?? 0} reviews)',
+                            style: TextStyle(color: Colors.grey),
                           ),
                         ],
                       ),
-
-                      SizedBox(height: 8),
-
-                      // Ratings and Reviews
-                      Row(
-                        children: [
-                          Icon(Icons.star, color: Colors.amber, size: 20),
-                          SizedBox(width: 4),
-                          Text('4.8'),
-                          SizedBox(width: 16),
-                          Icon(Icons.thumb_up, color: Colors.green, size: 20),
-                          SizedBox(width: 4),
-                          Text('94%'),
-                          SizedBox(width: 8),
-                          Text('(117 reviews)',
-                              style: TextStyle(color: Colors.grey)),
-                        ],
-                      ),
-
                       SizedBox(height: 16),
-
-                      // Product Description
                       Text(
-                        'The Microsoft Xbox Series X gaming console is capable of impressing with minimal boot times and mesmerizing visual effects when playing games at up to 120 frames per second.',
-                        style: TextStyle(fontSize: 16, color: Colors.grey),
-                      ),
-
-                      SizedBox(height: 16),
-
-                      // Storage Options
-                      Text(
-                        'Storage Options',
+                        productDetails?['description'] ??
+                            'Product description not available.',
                         style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
+                            fontSize: 16, color: Colors.grey),
                       ),
-                      SizedBox(height: 8),
-                      _buildOptions('storage', ['1 TB', '825 GB', '512 GB']),
-
                       SizedBox(height: 16),
-
-                      // Color Options
-                      Text(
-                        'Color Options',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      _buildOptions('color', ['Black', 'White', 'Blue']),
                     ],
                   ),
                 ),
               ),
             ),
-
-            // Bottom Section with Price and Buttons
             Container(
               padding: EdgeInsets.all(16.0),
               decoration: BoxDecoration(
@@ -167,22 +174,45 @@ class _ProductScreenState extends State<ProductScreen> {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        '\$650.00',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey,
-                          decoration: TextDecoration.lineThrough,
-                        ),
-                      ),
-                      Text(
-                        '\$570.00',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.green,
-                        ),
-                      ),
+                      if (productDetails?['price'] != null)
+                        (() {
+                          final price = double.tryParse(productDetails?['price']?.toString() ?? '0') ?? 0;
+                          final discount = double.tryParse(productDetails?['discount']?.toString() ?? '0') ?? 0;
+
+                          if (discount > 0) {
+                            final discountedPrice = price - (price * discount / 100);
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  '\$${price.toStringAsFixed(2)}',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey,
+                                    decoration: TextDecoration.lineThrough,
+                                  ),
+                                ),
+                                Text(
+                                  '\$${discountedPrice.toStringAsFixed(2)} (${discount.toStringAsFixed(0)}% off)',
+                                  style: TextStyle(
+                                    fontSize: 22,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.green,
+                                  ),
+                                ),
+                              ],
+                            );
+                          } else {
+                            return Text(
+                              '\$${price.toStringAsFixed(2)}',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.green,
+                              ),
+                            );
+                          }
+                        })(),
                     ],
                   ),
                   Row(
@@ -193,8 +223,7 @@ class _ProductScreenState extends State<ProductScreen> {
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 24, vertical: 16),
+                          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                         ),
                         child: Text(
                           'Buy',
@@ -208,8 +237,7 @@ class _ProductScreenState extends State<ProductScreen> {
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.orange,
-                          padding: EdgeInsets.symmetric(
-                              horizontal: 24, vertical: 16),
+                          padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                         ),
                         child: Text(
                           'Sell',
@@ -224,30 +252,6 @@ class _ProductScreenState extends State<ProductScreen> {
           ],
         ),
       ),
-    );
-  }
-
-  Widget _buildOptions(String type, List<String> options) {
-    return Wrap(
-      spacing: 12.0,
-      children: options.map((option) {
-        bool isSelected = (type == 'storage' && selectedStorageOption == option) ||
-            (type == 'color' && selectedColorOption == option);
-
-        return ChoiceChip(
-          label: Text(option),
-          selected: isSelected,
-          onSelected: (bool selected) {
-            setState(() {
-              if (type == 'storage') {
-                selectedStorageOption = selected ? option : null;
-              } else if (type == 'color') {
-                selectedColorOption = selected ? option : null;
-              }
-            });
-          },
-        );
-      }).toList(),
     );
   }
 }

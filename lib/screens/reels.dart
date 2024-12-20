@@ -15,21 +15,46 @@ class _ReelScreenState extends State<ReelScreen> {
   List<Map<String, String>> videos = [];
   bool isLoading = false;
   int page = 1;
+  int _currentPage = 0;
 
   @override
   void initState() {
     super.initState();
     _controllers = [];
+    _pageController.addListener(_onPageChanged);
     _fetchData();
   }
 
   @override
   void dispose() {
-    // Dispose all controllers
     for (var controller in _controllers) {
       controller.dispose();
     }
+    _pageController.removeListener(_onPageChanged);
+    _pageController.dispose();
     super.dispose();
+  }
+
+  void _onPageChanged() {
+    int newPage = _pageController.page?.round() ?? 0;
+    if (newPage != _currentPage) {
+      _currentPage = newPage;
+      _updatePlayback();
+    }
+  }
+
+  void _updatePlayback() {
+    for (int i = 0; i < _controllers.length; i++) {
+      if (i == _currentPage) {
+        if (_controllers[i].value.isInitialized) {
+          _controllers[i].play();
+        }
+      } else {
+        if (_controllers[i].value.isInitialized) {
+          _controllers[i].pause();
+        }
+      }
+    }
   }
 
   Future<void> _fetchData() async {
@@ -38,33 +63,36 @@ class _ReelScreenState extends State<ReelScreen> {
       isLoading = true;
     });
 
-    // Simulate API call (replace with your actual API call)
     await Future.delayed(Duration(seconds: 2));
 
-    // Example of data received from the API
     List<Map<String, String>> newVideos = List.generate(10, (index) {
       return {
-        'videoUrl': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4',
+        'videoUrl': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
         'productTitle': 'Product ${page * 10 + index}',
         'productId': '${page * 10 + index}',
         'productDescription': 'Description of product ${page * 10 + index}',
       };
     });
 
+    for (var i = 0; i < newVideos.length; i++) {
+      final videoData = newVideos[i];
+      final controller = VideoPlayerController.network(videoData['videoUrl']!);
+
+      await controller.initialize();
+      controller.setLooping(true);
+
+      if (i + (_controllers.length) == _currentPage) {
+        controller.play();
+      } else {
+        controller.pause();
+      }
+
+      _controllers.add(controller);
+    }
+
     setState(() {
       page++;
       videos.addAll(newVideos);
-      // Initialize new controllers for the newly added videos
-      for (var i = _controllers.length; i < videos.length; i++) {
-        _controllers.add(
-          VideoPlayerController.network(videos[i]['videoUrl']!)
-            ..initialize().then((_) {
-              _controllers[i].setLooping(true);
-              _controllers[i].play();
-              setState(() {});
-            }),
-        );
-      }
       isLoading = false;
     });
   }
@@ -82,6 +110,7 @@ class _ReelScreenState extends State<ReelScreen> {
       child: Scaffold(
         backgroundColor: Colors.black,
         body: PageView.builder(
+          scrollDirection: Axis.vertical,
           controller: _pageController,
           itemCount: videos.length + (isLoading ? 1 : 0),
           itemBuilder: (context, index) {
