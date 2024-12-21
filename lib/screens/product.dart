@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:shimmer/shimmer.dart';
 
 class ProductScreen extends StatefulWidget {
   final String productId;
@@ -71,76 +72,126 @@ class _ProductScreenState extends State<ProductScreen> {
           ),
         ),
         SizedBox(height: 16),
-        Center(
-          child: Container(
-            width: 250,
-            height: 250,
-            color: Colors.grey.shade300,
+        // Shimmer effect for the image container
+        Shimmer.fromColors(
+          baseColor: Colors.grey.shade300,
+          highlightColor: Colors.grey.shade100,
+          child: Center(
+            child: Container(
+              width: 250,
+              height: 250,
+              color: Colors.grey.shade300,
+            ),
           ),
         ),
         SizedBox(height: 16),
+        // Shimmer effect for the row of texts
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Container(
-              width: 150,
-              height: 20,
-              color: Colors.grey.shade300,
+            Shimmer.fromColors(
+              baseColor: Colors.grey.shade300,
+              highlightColor: Colors.grey.shade100,
+              child: Container(
+                width: 150,
+                height: 20,
+                color: Colors.grey.shade300,
+              ),
             ),
-            Container(
-              width: 70,
-              height: 20,
-              color: Colors.grey.shade300,
+            Shimmer.fromColors(
+              baseColor: Colors.grey.shade300,
+              highlightColor: Colors.grey.shade100,
+              child: Container(
+                width: 70,
+                height: 20,
+                color: Colors.grey.shade300,
+              ),
             ),
           ],
         ),
         SizedBox(height: 8),
+        // Shimmer effect for the row with star and thumbs up
         Row(
           children: [
-            Icon(Icons.star, color: Colors.grey.shade300, size: 20),
+            Shimmer.fromColors(
+              baseColor: Colors.grey.shade300,
+              highlightColor: Colors.grey.shade100,
+              child: Icon(Icons.star, color: Colors.grey.shade300, size: 20),
+            ),
             SizedBox(width: 4),
-            Container(
-              width: 40,
-              height: 20,
-              color: Colors.grey.shade300,
+            Shimmer.fromColors(
+              baseColor: Colors.grey.shade300,
+              highlightColor: Colors.grey.shade100,
+              child: Container(
+                width: 40,
+                height: 20,
+                color: Colors.grey.shade300,
+              ),
             ),
             SizedBox(width: 16),
-            Icon(Icons.thumb_up, color: Colors.grey.shade300, size: 20),
+            Shimmer.fromColors(
+              baseColor: Colors.grey.shade300,
+              highlightColor: Colors.grey.shade100,
+              child: Icon(Icons.thumb_up, color: Colors.grey.shade300, size: 20),
+            ),
             SizedBox(width: 4),
-            Container(
-              width: 40,
-              height: 20,
-              color: Colors.grey.shade300,
+            Shimmer.fromColors(
+              baseColor: Colors.grey.shade300,
+              highlightColor: Colors.grey.shade100,
+              child: Container(
+                width: 40,
+                height: 20,
+                color: Colors.grey.shade300,
+              ),
             ),
           ],
         ),
         SizedBox(height: 16),
-        Container(
-          width: double.infinity,
-          height: 80,
-          color: Colors.grey.shade300,
-        ),
-        SizedBox(height: 16),
-        Center(
+        // Shimmer effect for the description container
+        Shimmer.fromColors(
+          baseColor: Colors.grey.shade300,
+          highlightColor: Colors.grey.shade100,
           child: Container(
-            width: 150,
-            height: 20,
+            width: double.infinity,
+            height: 80,
             color: Colors.grey.shade300,
           ),
         ),
         SizedBox(height: 16),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Container(
-              width: 80,
+        // Shimmer effect for the row with text below the description
+        Center(
+          child: Shimmer.fromColors(
+            baseColor: Colors.grey.shade300,
+            highlightColor: Colors.grey.shade100,
+            child: Container(
+              width: 150,
               height: 20,
               color: Colors.grey.shade300,
             ),
-            Container(
-              width: 120,
-              height: 20,
-              color: Colors.grey.shade300,
+          ),
+        ),
+        SizedBox(height: 16),
+        // Shimmer effect for the final row with two containers
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Shimmer.fromColors(
+              baseColor: Colors.grey.shade300,
+              highlightColor: Colors.grey.shade100,
+              child: Container(
+                width: 80,
+                height: 20,
+                color: Colors.grey.shade300,
+              ),
+            ),
+            Shimmer.fromColors(
+              baseColor: Colors.grey.shade300,
+              highlightColor: Colors.grey.shade100,
+              child: Container(
+                width: 120,
+                height: 20,
+                color: Colors.grey.shade300,
+              ),
             ),
           ],
         ),
