@@ -216,9 +216,16 @@ class _ExploreScreenState extends State<ExploreScreen> {
   }
 
   Widget _buildExpandableFilter({required String title, required Widget content}) {
-    return ExpansionTile(
-      title: Text(title),
-      children: [content],
+    return Theme(
+      data: ThemeData(
+        dividerColor: Colors.transparent,  // Remove the divider line between the tile and expanded content
+      ),
+      child: ExpansionTile(
+        title: Text(title),
+        children: [
+          content,
+        ],
+      ),
     );
   }
 
