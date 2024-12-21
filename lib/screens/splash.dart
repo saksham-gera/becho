@@ -24,6 +24,8 @@ class _SplashScreenState extends State<SplashScreen> {
       return response.statusCode == 200;
     } catch (e) {
       debugPrint('Error validating token: $e');
+      await secureStorage.delete(key: 'authToken');
+      await secureStorage.delete(key: 'userID');
       return false;
     }
   }
@@ -31,7 +33,6 @@ class _SplashScreenState extends State<SplashScreen> {
   Future<void> _checkToken() async {
     String? authToken = await secureStorage.read(key: 'authToken');
     bool isValid = authToken != null && await _isTokenValid(authToken);
-
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (isValid) {
         Navigator.pushReplacement(

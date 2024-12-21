@@ -153,7 +153,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
           ),
           itemCount: productList.length,
           itemBuilder: (context, index) {
-            return ProductCard(product: productList[index]);
+            return ProductCard(product: productList[index], refresh: fetchProducts,);
           },
         ),
       ],

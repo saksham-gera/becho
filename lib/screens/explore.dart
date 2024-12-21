@@ -142,29 +142,56 @@ class _ExploreScreenState extends State<ExploreScreen> {
                         ],
                       ),
                     ),
-                    ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _fetchProducts(); // Apply filters
-                      },
-                      child: const Text('Apply Filters'),
-                    ),
-                    ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          filters = {
-                            'category': null,
-                            'ratings': null,
-                            'discount': null,
-                          };
-                          selectedMinPrice = minPrice;
-                          selectedMaxPrice = maxPrice;
-                        });
-                        Navigator.pop(context);
-                        _fetchProducts(); // Reset filters
-                      },
-                      child: const Text('Reset All Filters'),
-                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        ElevatedButton(
+                          onPressed: () {
+                            setState(() {
+                              filters = {
+                                'category': null,
+                                'ratings': null,
+                                'discount': null,
+                              };
+                              selectedMinPrice = minPrice;
+                              selectedMaxPrice = maxPrice;
+                            });
+                            Navigator.pop(context);
+                            _fetchProducts(); // Reset filters
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.redAccent,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text(
+                            'Reset',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                            _fetchProducts(); // Apply filters
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.green,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                          child: const Text(
+                            'Apply',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    )
                   ],
                 ),
               ),
@@ -239,7 +266,19 @@ class _ExploreScreenState extends State<ExploreScreen> {
                       SizedBox(width: 8),
                       ElevatedButton(
                         onPressed: _showFilterSheet,
-                        child: Text('Filter'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blueAccent,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          elevation: 4,
+                        ),
+                        child: const Text(
+                          'Filter',
+                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                        ),
                       ),
                     ],
                   ),
@@ -269,7 +308,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
                   if (!hasResults) {
                     return Center(child: Text('No products found'));
                   }
-                  return ProductCard(product: products[index]);
+                  return ProductCard(product: products[index], refresh: _fetchProducts,);
                 },
                 childCount: products.length,
               ),

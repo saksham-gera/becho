@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
@@ -15,6 +16,7 @@ class _ProductScreenState extends State<ProductScreen> {
   Map<String, dynamic>? productDetails;
   bool isLoading = true;
   bool hasError = false;
+  final FlutterSecureStorage storage = FlutterSecureStorage();
 
   @override
   void initState() {
@@ -23,12 +25,15 @@ class _ProductScreenState extends State<ProductScreen> {
   }
 
   Future<void> fetchProductDetails() async {
-    final url = 'https://bechoserver.vercel.app/products/${widget.productId}';
+    final userId = await storage.read(key: 'userID');
+    if (userId == null) {
+      throw Exception('User ID not found');
+    }
+    final url = 'https://bechoserver.vercel.app/products/${widget.productId}?userId=$userId';
     try {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
         final jsonResponse = json.decode(response.body);
-        print(jsonResponse);
         setState(() {
           productDetails = jsonResponse['product'];
           isLoading = false;
@@ -47,13 +52,145 @@ class _ProductScreenState extends State<ProductScreen> {
     }
   }
 
+  Widget buildLoadingUI() {
+    return Column(
+      children: [
+        // Back button at the top left
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            children: [
+              IconButton(
+                icon: Icon(Icons.arrow_back),
+                onPressed: () {
+                  // Handle back button action (e.g., pop the screen)
+                  Navigator.pop(context);
+                },
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: 16),
+        Center(
+          child: Container(
+            width: 250,
+            height: 250,
+            color: Colors.grey.shade300,
+          ),
+        ),
+        SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Container(
+              width: 150,
+              height: 20,
+              color: Colors.grey.shade300,
+            ),
+            Container(
+              width: 70,
+              height: 20,
+              color: Colors.grey.shade300,
+            ),
+          ],
+        ),
+        SizedBox(height: 8),
+        Row(
+          children: [
+            Icon(Icons.star, color: Colors.grey.shade300, size: 20),
+            SizedBox(width: 4),
+            Container(
+              width: 40,
+              height: 20,
+              color: Colors.grey.shade300,
+            ),
+            SizedBox(width: 16),
+            Icon(Icons.thumb_up, color: Colors.grey.shade300, size: 20),
+            SizedBox(width: 4),
+            Container(
+              width: 40,
+              height: 20,
+              color: Colors.grey.shade300,
+            ),
+          ],
+        ),
+        SizedBox(height: 16),
+        Container(
+          width: double.infinity,
+          height: 80,
+          color: Colors.grey.shade300,
+        ),
+        SizedBox(height: 16),
+        Center(
+          child: Container(
+            width: 150,
+            height: 20,
+            color: Colors.grey.shade300,
+          ),
+        ),
+        SizedBox(height: 16),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Container(
+              width: 80,
+              height: 20,
+              color: Colors.grey.shade300,
+            ),
+            Container(
+              width: 120,
+              height: 20,
+              color: Colors.grey.shade300,
+            ),
+          ],
+        ),
+        SizedBox(height: 16),
+      ],
+    );
+  }
+
+  Future<void> addToWishlist() async {
+    final userId = await storage.read(key: 'userID');
+    if (userId == null || productDetails == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to add to wishlist. Missing data.')),
+      );
+      return;
+    }
+
+    final newId = productDetails?['new_id'];
+    if (newId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Invalid product details.')),
+      );
+      return;
+    }
+
+    final url = 'https://bechoserver.vercel.app/wishlist/handle';
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'userId': userId, 'new_id': newId}),
+      );
+
+      if (response.statusCode == 201 || response.statusCode == 200) {
+        fetchProductDetails();
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('An error occurred.')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
         child: isLoading
-            ? Center(child: CircularProgressIndicator())
+            ? buildLoadingUI()
             : hasError
             ? Center(child: Text('Failed to load product details'))
             : Column(
@@ -66,18 +203,20 @@ class _ProductScreenState extends State<ProductScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Row(
-                        mainAxisAlignment:
-                        MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           IconButton(
                             icon: Icon(Icons.arrow_back),
                             onPressed: () {
-                              Navigator.pop(context);
+                              Navigator.pop(context, true);
                             },
                           ),
                           IconButton(
                             icon: Icon(Icons.favorite_border),
-                            onPressed: () {},
+                            color: productDetails?['in_wishlist'] ?? false
+                                ? Colors.red
+                                : Colors.black,
+                            onPressed: addToWishlist,
                           ),
                         ],
                       ),
@@ -99,8 +238,7 @@ class _ProductScreenState extends State<ProductScreen> {
                       ),
                       SizedBox(height: 16),
                       Row(
-                        mainAxisAlignment:
-                        MainAxisAlignment.spaceBetween,
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
                             productDetails?['title'] ?? 'Product Title',
@@ -115,13 +253,11 @@ class _ProductScreenState extends State<ProductScreen> {
                                   horizontal: 8.0, vertical: 4.0),
                               decoration: BoxDecoration(
                                 color: Colors.red,
-                                borderRadius:
-                                BorderRadius.circular(4.0),
+                                borderRadius: BorderRadius.circular(4.0),
                               ),
                               child: Text(
                                 'On sale',
-                                style:
-                                TextStyle(color: Colors.white),
+                                style: TextStyle(color: Colors.white),
                               ),
                             ),
                         ],
@@ -129,13 +265,11 @@ class _ProductScreenState extends State<ProductScreen> {
                       SizedBox(height: 8),
                       Row(
                         children: [
-                          Icon(Icons.star,
-                              color: Colors.amber, size: 20),
+                          Icon(Icons.star, color: Colors.amber, size: 20),
                           SizedBox(width: 4),
                           Text('${productDetails?['ratings'] ?? 'N/A'}'),
                           SizedBox(width: 16),
-                          Icon(Icons.thumb_up,
-                              color: Colors.green, size: 20),
+                          Icon(Icons.thumb_up, color: Colors.green, size: 20),
                           SizedBox(width: 4),
                           Text(
                             '(${productDetails?['reviews'] ?? 0} reviews)',
@@ -147,10 +281,27 @@ class _ProductScreenState extends State<ProductScreen> {
                       Text(
                         productDetails?['description'] ??
                             'Product description not available.',
-                        style: TextStyle(
-                            fontSize: 16, color: Colors.grey),
+                        style: TextStyle(fontSize: 16, color: Colors.grey),
                       ),
                       SizedBox(height: 16),
+                      Center(
+                        child: Container(
+                          margin: EdgeInsets.symmetric(vertical: 20),
+                          padding: EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade100,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            'Hurry! Limited Stock Available.',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.blue.shade900,
+                            ),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -176,8 +327,12 @@ class _ProductScreenState extends State<ProductScreen> {
                     children: [
                       if (productDetails?['price'] != null)
                         (() {
-                          final price = double.tryParse(productDetails?['price']?.toString() ?? '0') ?? 0;
-                          final discount = double.tryParse(productDetails?['discount']?.toString() ?? '0') ?? 0;
+                          final price = double.tryParse(
+                              productDetails?['price']?.toString() ?? '0') ??
+                              0;
+                          final discount = double.tryParse(
+                              productDetails?['discount']?.toString() ?? '0') ??
+                              0;
 
                           if (discount > 0) {
                             final discountedPrice = price - (price * discount / 100);

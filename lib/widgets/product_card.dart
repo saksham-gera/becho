@@ -3,28 +3,38 @@ import 'package:flutter/material.dart';
 import '../models/product_model.dart';
 import '../screens/product.dart';
 
-class ProductCard extends StatelessWidget {
+class ProductCard extends StatefulWidget {
   final ProductModel product;
+  final Function refresh;
 
   const ProductCard({
     Key? key,
     required this.product,
+    required this.refresh,
   }) : super(key: key);
 
   @override
+  State<ProductCard> createState() => _ProductCardState();
+}
+
+class _ProductCardState extends State<ProductCard> {
+  @override
   Widget build(BuildContext context) {
-    final double mrp = double.parse(product.mrp.replaceAll('\$', ''));
-    final double discount = double.parse(product.discount.replaceAll('%', ''));
+    final double mrp = double.parse(widget.product.mrp.replaceAll('\$', ''));
+    final double discount = double.parse(widget.product.discount.replaceAll('%', ''));
     final double discountedPrice = mrp * (1 - discount / 100);
 
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        final result = await Navigator.push(
           context,
-          CupertinoPageRoute(
-            builder: (context) => ProductScreen(productId: product.id),
+          MaterialPageRoute(
+            builder: (context) => ProductScreen(productId: widget.product.id),
           ),
         );
+        if (result == true) {
+          widget.refresh(); // Call the refresh function from the parent
+        }
       },
       child: Container(
         padding: const EdgeInsets.all(8),
@@ -47,7 +57,7 @@ class ProductCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   image: DecorationImage(
-                    image: NetworkImage(product.imageUrl),
+                    image: NetworkImage(widget.product.imageUrl),
                     fit: BoxFit.contain,
                   ),
                 ),
@@ -55,7 +65,7 @@ class ProductCard extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             Text(
-              product.title,
+              widget.product.title,
               style: const TextStyle(
                 fontWeight: FontWeight.bold,
                 fontSize: 14,
@@ -67,14 +77,14 @@ class ProductCard extends StatelessWidget {
             const SizedBox(height: 4),
             Row(
               children: [
-                Icon(
+                const Icon(
                   Icons.star,
                   color: Colors.amber,
                   size: 20,
                 ),
                 const SizedBox(width: 4),
                 Text(
-                  '${product.ratings} / 5',
+                  '${widget.product.ratings} / 5',
                   style: const TextStyle(
                     fontSize: 12,
                     color: CupertinoColors.systemGrey,
@@ -105,7 +115,7 @@ class ProductCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    '(${product.discount} off)',
+                    '(${widget.product.discount} off)',
                     style: const TextStyle(
                       fontSize: 12,
                       color: Colors.red,

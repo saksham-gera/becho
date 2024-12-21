@@ -37,6 +37,7 @@ dependencies:
     sdk: flutter
   cupertino_icons: ^1.0.6
   flutter_secure_storage: ^9.2.2
+  dart_jsonwebtoken: ^2.14.2
   #  url_launcher: ^6.0.10
 
 dev_dependencies:
