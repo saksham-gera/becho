@@ -28,13 +28,14 @@ environment:
 # the latest version available on pub.dev. To see which dependencies have newer
 # versions available, run `flutter pub outdated`.
 dependencies:
+  flutter:
+    sdk: flutter
+
   video_player: ^2.5.0
   shared_preferences: ^2.1.0
   http: ^1.1.0
   path_provider_android: ^2.0.0
   google_fonts: ^5.0.0
-  flutter:
-    sdk: flutter
   cupertino_icons: ^1.0.6
   flutter_secure_storage: ^9.2.2
   dart_jsonwebtoken: ^2.14.2

@@ -44,36 +44,56 @@ class _ExploreScreenState extends State<ExploreScreen> {
     });
 
     Map<String, String> queryParams = {};
+
+    // Ensure that searchQuery is always included if there's a value
     if (query != null && query.isNotEmpty) {
-      queryParams['query'] = query;
+      queryParams['searchQuery'] = query;
+    } else if (_searchController.text.isNotEmpty) {
+      queryParams['searchQuery'] = _searchController.text;
     }
+
+    // Apply filters only if they are set
     filters.forEach((key, value) {
       if (value != null && value.isNotEmpty) {
         queryParams[key] = value;
       }
     });
 
-    queryParams['minPrice'] = selectedMinPrice.toString();
-    queryParams['maxPrice'] = selectedMaxPrice.toString();
+    // Apply minPrice and maxPrice
+    queryParams['minPrice'] = selectedMinPrice.round().toString();
+    queryParams['maxPrice'] = selectedMaxPrice.round().toString();
 
     final uri = Uri.https('bechoserver.vercel.app', '/products', queryParams);
-    final response = await http.get(uri);
+    print('Fetching products with URI: $uri'); // Debugging Log
 
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      setState(() {
-        if (data['data'].isEmpty) {
+    try {
+      final response = await http.get(uri);
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print('API Response: $data'); // Debugging Log
+        setState(() {
+          if (data['data'].isEmpty) {
+            products = [];
+            hasResults = false;
+          } else {
+            products = List<ProductModel>.from(
+              data['data'].map((product) => ProductModel.fromJson(product)),
+            );
+            hasResults = true;
+          }
+          isSearching = false;
+        });
+      } else {
+        print('Error fetching products: ${response.statusCode} - ${response.body}');
+        setState(() {
           products = [];
           hasResults = false;
-        } else {
-          products = List<ProductModel>.from(
-            data['data'].map((product) => ProductModel.fromJson(product)),
-          );
-          hasResults = true;
-        }
-        isSearching = false;
-      });
-    } else {
+          isSearching = false;
+        });
+      }
+    } catch (error) {
+      print('Exception while fetching products: $error'); // Debugging Log
       setState(() {
         products = [];
         hasResults = false;

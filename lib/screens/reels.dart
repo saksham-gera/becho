@@ -28,7 +28,7 @@ class _ReelScreenState extends State<ReelScreen> {
   @override
   void dispose() {
     for (var controller in _controllers) {
-      controller.dispose();
+      controller.dispose();  // Ensures controllers are disposed when no longer needed
     }
     _pageController.removeListener(_onPageChanged);
     _pageController.dispose();
@@ -74,6 +74,7 @@ class _ReelScreenState extends State<ReelScreen> {
       };
     });
 
+    // Add new video controllers and clean up old ones if necessary
     for (var i = 0; i < newVideos.length; i++) {
       final videoData = newVideos[i];
       final controller = VideoPlayerController.network(videoData['videoUrl']!);
