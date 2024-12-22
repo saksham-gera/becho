@@ -85,7 +85,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
           isSearching = false;
         });
       } else {
-        print('Error fetching products: ${response.statusCode} - ${response.body}');
+        print(
+            'Error fetching products: ${response.statusCode} - ${response.body}');
         setState(() {
           products = [];
           hasResults = false;
@@ -123,7 +124,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
                             'Selected Range: \$${selectedMinPrice.round()} - \$${selectedMaxPrice.round()}',
                           ),
                           RangeSlider(
-                            values: RangeValues(selectedMinPrice, selectedMaxPrice),
+                            values:
+                                RangeValues(selectedMinPrice, selectedMaxPrice),
                             min: minPrice,
                             max: maxPrice,
                             divisions: 100,
@@ -145,10 +147,14 @@ class _ExploreScreenState extends State<ExploreScreen> {
                       title: "Discount",
                       content: Column(
                         children: [
-                          _buildRadioFilterOption('15%+', '15', 'discount', setState),
-                          _buildRadioFilterOption('20%+', '20', 'discount', setState),
-                          _buildRadioFilterOption('25%+', '25', 'discount', setState),
-                          _buildRadioFilterOption('40%+', '40', 'discount', setState),
+                          _buildRadioFilterOption(
+                              '15%+', '15', 'discount', setState),
+                          _buildRadioFilterOption(
+                              '20%+', '20', 'discount', setState),
+                          _buildRadioFilterOption(
+                              '25%+', '25', 'discount', setState),
+                          _buildRadioFilterOption(
+                              '40%+', '40', 'discount', setState),
                         ],
                       ),
                     ),
@@ -156,16 +162,19 @@ class _ExploreScreenState extends State<ExploreScreen> {
                       title: "Ratings",
                       content: Column(
                         children: [
-                          _buildRadioFilterOption('3+', '3', 'ratings', setState),
-                          _buildRadioFilterOption('4+', '4', 'ratings', setState),
-                          _buildRadioFilterOption('4.5+', '4.5', 'ratings', setState),
+                          _buildRadioFilterOption(
+                              '3+', '3', 'ratings', setState),
+                          _buildRadioFilterOption(
+                              '4+', '4', 'ratings', setState),
+                          _buildRadioFilterOption(
+                              '4.5+', '4.5', 'ratings', setState),
                         ],
                       ),
                     ),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        ElevatedButton(
+                        OutlinedButton(
                           onPressed: () {
                             setState(() {
                               filters = {
@@ -179,17 +188,28 @@ class _ExploreScreenState extends State<ExploreScreen> {
                             Navigator.pop(context);
                             _fetchProducts(); // Reset filters
                           },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.redAccent,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                          style: OutlinedButton.styleFrom(
+                            side: BorderSide(
+                                color: Colors.redAccent,
+                                width: 2), // Border color and width
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 12),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
+                            backgroundColor:
+                                Colors.transparent, // Default background color
+                          ).copyWith(
+                            overlayColor: MaterialStateProperty.all(
+                                Colors.redAccent), // Background on press
                           ),
                           child: const Text(
                             'Reset',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.redAccent, // Text color
+                            ),
                           ),
                         ),
                         ElevatedButton(
@@ -198,16 +218,18 @@ class _ExploreScreenState extends State<ExploreScreen> {
                             _fetchProducts(); // Apply filters
                           },
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
+                            backgroundColor: Colors.black,
                             foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 20, vertical: 12),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8),
                             ),
                           ),
                           child: const Text(
                             'Apply',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            style: TextStyle(
+                                fontSize: 16, fontWeight: FontWeight.bold),
                           ),
                         ),
                       ],
@@ -222,7 +244,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
     );
   }
 
-  Widget _buildRadioFilterOption(String label, String value, String filterKey, StateSetter setState) {
+  Widget _buildRadioFilterOption(
+      String label, String value, String filterKey, StateSetter setState) {
     return RadioListTile<String>(
       title: Text(label),
       value: value,
@@ -235,10 +258,12 @@ class _ExploreScreenState extends State<ExploreScreen> {
     );
   }
 
-  Widget _buildExpandableFilter({required String title, required Widget content}) {
+  Widget _buildExpandableFilter(
+      {required String title, required Widget content}) {
     return Theme(
       data: ThemeData(
-        dividerColor: Colors.transparent,  // Remove the divider line between the tile and expanded content
+        dividerColor: Colors
+            .transparent, // Remove the divider line between the tile and expanded content
       ),
       child: ExpansionTile(
         title: Text(title),
@@ -290,54 +315,37 @@ class _ExploreScreenState extends State<ExploreScreen> {
                           ),
                         ),
                       ),
-                      SizedBox(width: 8),
-                      ElevatedButton(
-                        onPressed: _showFilterSheet,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueAccent,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          elevation: 4,
-                        ),
-                        child: const Text(
-                          'Filter',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                        ),
-                      ),
                     ],
                   ),
                 ],
               ),
             ),
           ),
-          SliverPadding(
+          // Checking for search status and products found
+          isSearching
+              ? SliverFillRemaining(
+            child: Center(child: CircularProgressIndicator()),
+          )
+              : !hasResults
+              ? SliverFillRemaining(
+            child: Center(
+              child: Text(
+                'No products found',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+          )
+              : SliverPadding(
             padding: const EdgeInsets.all(8.0),
-            sliver: isSearching
-                ? SliverGrid(
+            sliver: SliverGrid(
               delegate: SliverChildBuilderDelegate(
                     (context, index) {
-                  return Center(child: CircularProgressIndicator());
+                  return ProductCard(
+                    product: products[index],
+                    refresh: _fetchProducts,
+                  );
                 },
-                childCount: 1,
-              ),
-              gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
-              ),
-            )
-                : SliverGrid(
-              delegate: SliverChildBuilderDelegate(
-                    (context, index) {
-                  if (!hasResults) {
-                    return Center(child: Text('No products found'));
-                  }
-                  return ProductCard(product: products[index], refresh: _fetchProducts,);
-                },
-                childCount: products.length,
+                childCount: products.length > 0 ? products.length : 1,
               ),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
@@ -349,6 +357,16 @@ class _ExploreScreenState extends State<ExploreScreen> {
           ),
         ],
       ),
+      floatingActionButton: !showShopScreen
+          ? FloatingActionButton(
+        onPressed: _showFilterSheet,
+        backgroundColor: Colors.black,
+        child: Icon(
+          Icons.filter_list,
+          color: Colors.white,
+        ),
+      )
+          : null,
     );
   }
 }
