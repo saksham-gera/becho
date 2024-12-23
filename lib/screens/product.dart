@@ -31,10 +31,12 @@ class _ProductScreenState extends State<ProductScreen> {
       throw Exception('User ID not found');
     }
     final url = 'https://bechoserver.vercel.app/products/${widget.productId}?userId=$userId';
+    print(url);
     try {
       final response = await http.get(Uri.parse(url));
+      final jsonResponse = json.decode(response.body);
+      print(jsonResponse);
       if (response.statusCode == 200) {
-        final jsonResponse = json.decode(response.body);
         setState(() {
           productDetails = jsonResponse['product'];
           isLoading = false;
@@ -209,8 +211,8 @@ class _ProductScreenState extends State<ProductScreen> {
       return;
     }
 
-    final newId = productDetails?['new_id'];
-    if (newId == null) {
+    final id = productDetails?['id'];
+    if (id == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Invalid product details.')),
       );
@@ -222,9 +224,9 @@ class _ProductScreenState extends State<ProductScreen> {
       final response = await http.post(
         Uri.parse(url),
         headers: {'Content-Type': 'application/json'},
-        body: json.encode({'userId': userId, 'new_id': newId}),
+        body: json.encode({'userId': userId, 'id': id}),
       );
-
+      print(json.decode(response.body));
       if (response.statusCode == 201 || response.statusCode == 200) {
         fetchProductDetails();
       }
@@ -291,26 +293,17 @@ class _ProductScreenState extends State<ProductScreen> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Text(
-                            productDetails?['title'] ?? 'Product Title',
-                            style: TextStyle(
-                              fontSize: 22,
-                              fontWeight: FontWeight.bold,
+                          Flexible(
+                            child: Text(
+                              productDetails?['title'] ?? 'Product Title',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                              ),
+                              maxLines: 5, // Adjust the max lines to avoid excessive height.
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          if (productDetails?['onSale'] == true)
-                            Container(
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 8.0, vertical: 4.0),
-                              decoration: BoxDecoration(
-                                color: Colors.red,
-                                borderRadius: BorderRadius.circular(4.0),
-                              ),
-                              child: Text(
-                                'On sale',
-                                style: TextStyle(color: Colors.white),
-                              ),
-                            ),
                         ],
                       ),
                       SizedBox(height: 8),
@@ -433,7 +426,7 @@ class _ProductScreenState extends State<ProductScreen> {
                         ),
                         child: Text(
                           'Buy',
-                          style: TextStyle(fontSize: 18),
+                          style: TextStyle(color: Colors.white,fontSize: 18),
                         ),
                       ),
                       SizedBox(width: 8),
@@ -442,12 +435,12 @@ class _ProductScreenState extends State<ProductScreen> {
                           // Handle Sell action
                         },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange,
+                          backgroundColor: Colors.black,
                           padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                         ),
                         child: Text(
                           'Sell',
-                          style: TextStyle(fontSize: 18),
+                          style: TextStyle(color: Colors.white,fontSize: 18),
                         ),
                       ),
                     ],

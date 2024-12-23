@@ -67,7 +67,7 @@ class _ReelScreenState extends State<ReelScreen> {
 
     List<Map<String, String>> newVideos = List.generate(10, (index) {
       return {
-        'videoUrl': 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/ForBiggerEscapes.mp4',
+        'videoUrl': 'https://amz-downloader.alttextgenerator.net/media/1734974223_output_627483fb-e81e-4add-98fa-b013c647ba83.mp4',
         'productTitle': 'Product ${page * 10 + index}',
         'productId': '${page * 10 + index}',
         'productDescription': 'Description of product ${page * 10 + index}',

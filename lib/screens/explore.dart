@@ -28,9 +28,9 @@ class _ExploreScreenState extends State<ExploreScreen> {
   };
 
   double selectedMinPrice = 0;
-  double selectedMaxPrice = 1000;
+  double selectedMaxPrice = 100000000;
   double minPrice = 0;
-  double maxPrice = 1000;
+  double maxPrice = 100000000;
 
   @override
   void initState() {
@@ -124,6 +124,8 @@ class _ExploreScreenState extends State<ExploreScreen> {
                             'Selected Range: \$${selectedMinPrice.round()} - \$${selectedMaxPrice.round()}',
                           ),
                           RangeSlider(
+                            activeColor: Colors.black,
+                            inactiveColor: Colors.black,
                             values:
                                 RangeValues(selectedMinPrice, selectedMaxPrice),
                             min: minPrice,
@@ -247,6 +249,7 @@ class _ExploreScreenState extends State<ExploreScreen> {
   Widget _buildRadioFilterOption(
       String label, String value, String filterKey, StateSetter setState) {
     return RadioListTile<String>(
+      activeColor: Colors.black,
       title: Text(label),
       value: value,
       groupValue: filters[filterKey],

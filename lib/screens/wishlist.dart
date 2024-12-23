@@ -36,8 +36,9 @@ class _WishlistScreenState extends State<WishlistScreen> {
       if (userId == null) {
         throw Exception('User ID not found');
       }
-      final url = 'https://bechoserver.vercel.app/wishlist/$userId';
+      final url = 'https://bechoserver.vercel.app/wishlist?userId=$userId';
       final response = await http.get(Uri.parse(url));
+      print(json.decode(response.body));
       if (response.statusCode == 200) {
         final List<dynamic> productsJson = json.decode(response.body)['wishlist'];
         setState(() {

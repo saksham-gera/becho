@@ -14,7 +14,8 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       title: 'Becho',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0x202138)),
+        colorScheme: ColorScheme.fromSeed(seedColor: Colors.black),
+        // colorScheme: ColorScheme.fromSeed(seedColor: const Color(0x202138)),
         useMaterial3: true,
         textTheme: TextTheme(
           displayLarge: TextStyle(color: Colors.black), // For large text elements

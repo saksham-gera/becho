@@ -94,28 +94,33 @@ class _ProductCardState extends State<ProductCard> {
             ),
             const SizedBox(height: 4),
             if (discount > 0)
-              Row(
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '\$${mrp.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: CupertinoColors.systemGrey,
-                      decoration: TextDecoration.lineThrough,
-                    ),
+                  Row(
+                    children: [
+                      Text(
+                        '\$${mrp.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: CupertinoColors.systemGrey,
+                          decoration: TextDecoration.lineThrough,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        '\$${discountedPrice.toStringAsFixed(2)}',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.red,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    '\$${discountedPrice.toStringAsFixed(2)}',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.red,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    '(${widget.product.discount} off)',
+                    '(${widget.product.discount}% off)',
                     style: const TextStyle(
                       fontSize: 12,
                       color: Colors.red,
