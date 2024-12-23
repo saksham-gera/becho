@@ -39,7 +39,12 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_titles[_selectedTabIndex]),
+        title: Text(
+            _titles[_selectedTabIndex],
+          style: TextStyle(
+            fontWeight: FontWeight.w800,
+          ),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.notifications),
