@@ -88,7 +88,7 @@ class _ReelScreenState extends State<ReelScreen> {
         List<Map<String, dynamic>> newVideos = responseData.map((item) {
           return {
             'videoUrl': item['url'],
-            'productTitle': 'Product ${item['product_id']}',
+            'productTitle': item['title'] ?? 'Awesome Product',
             'productId': item['product_id'],
             'productDescription': item['description'] ?? 'No description available',
             'wishlisted': item['wishlisted'],
