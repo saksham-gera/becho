@@ -15,41 +15,78 @@ class DiscoverScreen extends StatefulWidget {
 
 class _DiscoverScreenState extends State<DiscoverScreen> {
   int _selectedCategoryIndex = 0;
+  List<Map<String, dynamic>> categoryList = [];
   List<ProductModel> productList = [];
-  bool isLoading = true;
+  bool isLoadingCategories = true;
+  bool isLoadingProducts = true;
 
   @override
   void initState() {
     super.initState();
-    fetchProducts();
+    fetchCategories();
   }
 
-  Future<void> fetchProducts() async {
+  Future<void> fetchCategories() async {
     try {
-      final response = await http.get(Uri.parse('https://bechoserver.vercel.app/products'));
+      final response = await http.get(Uri.parse('https://bechoserver.vercel.app/category'));
       if (response.statusCode == 200) {
-        print(response.body);
         final data = json.decode(response.body);
+        setState(() {
+          categoryList = [
+            {'id': null, 'title': 'All'}, // Add "All" category at the start
+            ...List<Map<String, dynamic>>.from(data),
+          ];
+          isLoadingCategories = false;
+        });
+        fetchProducts(); // Fetch products for the "All" category by default
+      } else {
+        throw Exception('Failed to load categories');
+      }
+    } catch (e) {
+      setState(() {
+        isLoadingCategories = false;
+      });
+      print('Error fetching categories: $e');
+    }
+  }
+
+  Future<void> fetchProducts([String? categoryId]) async {
+    setState(() {
+      isLoadingProducts = true;
+    });
+    try {
+      final uri = categoryId != null
+          ? Uri.parse('https://bechoserver.vercel.app/products?category=$categoryId')
+          : Uri.parse('https://bechoserver.vercel.app/products');
+      final response = await http.get(uri);
+      final data = json.decode(response.body);
+
+      if (response.statusCode == 200) {
         setState(() {
           productList = (data['data'] as List)
               .map((json) => ProductModel.fromJson(json))
               .toList();
-          isLoading = false;
+          isLoadingProducts = false;
+        });
+      } else if (response.statusCode == 201 || (data['data'] as List).isEmpty) {
+        setState(() {
+          productList = [];
+          isLoadingProducts = false;
         });
       } else {
         throw Exception('Failed to load products');
       }
     } catch (e) {
       setState(() {
-        isLoading = false;
+        isLoadingProducts = false;
       });
-      print('Error: $e');
+      print('Error fetching products: $e');
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return isLoading
+    return isLoadingCategories
         ? const Center(child: CircularProgressIndicator())
         : ListView(
       padding: const EdgeInsets.all(16),
@@ -76,9 +113,7 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
                     const SizedBox(height: 8),
                     const Text(
                       'Up to 50%',
-                      style: TextStyle(
-                        fontSize: 16,
-                      ),
+                      style: TextStyle(fontSize: 16),
                     ),
                   ],
                 ),
@@ -102,35 +137,19 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
         SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Row(
-            children: [
-              CategoryCard(
-                title: 'All',
-                isSelected: _selectedCategoryIndex == 0,
+            children: List.generate(categoryList.length, (index) {
+              final category = categoryList[index];
+              return CategoryCard(
+                title: category['title'],
+                isSelected: _selectedCategoryIndex == index,
                 onTap: () {
                   setState(() {
-                    _selectedCategoryIndex = 0;
+                    _selectedCategoryIndex = index;
                   });
+                  fetchProducts(category['id']); // Pass null for "All"
                 },
-              ),
-              CategoryCard(
-                title: 'Smartphones',
-                isSelected: _selectedCategoryIndex == 1,
-                onTap: () {
-                  setState(() {
-                    _selectedCategoryIndex = 1;
-                  });
-                },
-              ),
-              CategoryCard(
-                title: 'Gaming Consoles',
-                isSelected: _selectedCategoryIndex == 2,
-                onTap: () {
-                  setState(() {
-                    _selectedCategoryIndex = 2;
-                  });
-                },
-              ),
-            ],
+              );
+            }),
           ),
         ),
         const SizedBox(height: 16),
@@ -142,7 +161,16 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
           ),
         ),
         const SizedBox(height: 12),
-        GridView.builder(
+        isLoadingProducts
+            ? const Center(child: CircularProgressIndicator())
+            : productList.isEmpty
+            ? const Center(
+          child: Text(
+            'No products found.',
+            style: TextStyle(fontSize: 16),
+          ),
+        )
+            : GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
@@ -153,7 +181,10 @@ class _DiscoverScreenState extends State<DiscoverScreen> {
           ),
           itemCount: productList.length,
           itemBuilder: (context, index) {
-            return ProductCard(product: productList[index], refresh: fetchProducts,);
+            return ProductCard(
+              product: productList[index],
+              refresh: () => fetchProducts(categoryList[_selectedCategoryIndex]['id']),
+            );
           },
         ),
       ],

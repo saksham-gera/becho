@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 import 'package:video_player/video_player.dart';
 import 'product.dart';
 
@@ -11,11 +14,13 @@ class ReelScreen extends StatefulWidget {
 
 class _ReelScreenState extends State<ReelScreen> {
   late List<VideoPlayerController> _controllers;
-  PageController _pageController = PageController();
-  List<Map<String, String>> videos = [];
+  final PageController _pageController = PageController();
+  List<Map<String, dynamic>> videos = [];
   bool isLoading = false;
   int page = 1;
   int _currentPage = 0;
+  String _currVideoId = 'abc';
+  final FlutterSecureStorage _storage = FlutterSecureStorage();
 
   @override
   void initState() {
@@ -28,7 +33,7 @@ class _ReelScreenState extends State<ReelScreen> {
   @override
   void dispose() {
     for (var controller in _controllers) {
-      controller.dispose();  // Ensures controllers are disposed when no longer needed
+      controller.dispose();
     }
     _pageController.removeListener(_onPageChanged);
     _pageController.dispose();
@@ -63,51 +68,101 @@ class _ReelScreenState extends State<ReelScreen> {
       isLoading = true;
     });
 
-    await Future.delayed(Duration(seconds: 2));
+    final userId = await _storage.read(key: 'userID');
+    print(userId);
+    if (userId == null) {
+      setState(() {
+        isLoading = false;
+      });
+      return;
+    }
 
-    List<Map<String, String>> newVideos = List.generate(10, (index) {
-      return {
-        'videoUrl': 'https://amz-downloader.alttextgenerator.net/media/1734974223_output_627483fb-e81e-4add-98fa-b013c647ba83.mp4',
-        'productTitle': 'Product ${page * 10 + index}',
-        'productId': '${page * 10 + index}',
-        'productDescription': 'Description of product ${page * 10 + index}',
-      };
-    });
+    try {
+      final url = 'https://bechoserver.vercel.app/reels/$userId';
+      final response = await http.get(Uri.parse(url));
+      print(url);
+      print(json.decode(response.body));
+      if (response.statusCode == 200) {
+        List<dynamic> responseData = json.decode(response.body)['data'];
 
-    // Add new video controllers and clean up old ones if necessary
-    for (var i = 0; i < newVideos.length; i++) {
-      final videoData = newVideos[i];
-      final controller = VideoPlayerController.network(videoData['videoUrl']!);
+        List<Map<String, dynamic>> newVideos = responseData.map((item) {
+          return {
+            'videoUrl': item['url'],
+            'productTitle': 'Product ${item['product_id']}',
+            'productId': item['product_id'],
+            'productDescription': item['description'] ?? 'No description available',
+            'wishlisted': item['wishlisted'],
+            'in_wishlist' : item['in_wishlist'],
+          };
+        }).toList();
 
-      await controller.initialize();
-      controller.setLooping(true);
+        for (var i = 0; i < newVideos.length; i++) {
+          final videoData = newVideos[i];
+          final controller = VideoPlayerController.networkUrl(Uri.parse(videoData['videoUrl']));
 
-      if (i + (_controllers.length) == _currentPage) {
-        controller.play();
-      } else {
-        controller.pause();
+          await controller.initialize();
+          controller.setLooping(true);
+
+          if (i + (_controllers.length) == _currentPage) {
+            controller.play();
+          } else {
+            controller.pause();
+          }
+
+          _controllers.add(controller);
+        }
+
+        setState(() {
+          videos.addAll(newVideos);
+        });
       }
-
-      _controllers.add(controller);
+    } catch (e) {
+      print("Error fetching reels: $e");
     }
 
     setState(() {
-      page++;
-      videos.addAll(newVideos);
       isLoading = false;
     });
   }
 
-  void addToWishlist() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Added to Wishlist!')),
-    );
+  Future<void> addToWishlist(String? productId) async {
+    final userId = await _storage.read(key: 'userID');
+    if (userId == null || productId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to add to wishlist. Missing data.')),
+      );
+      return;
+    }
+
+    const url = 'https://bechoserver.vercel.app/wishlist/handle';
+    try {
+      final response = await http.post(
+        Uri.parse(url),
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'userId': userId, 'id': productId}),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('An error occurred.')),
+      );
+    }
   }
+
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onDoubleTap: addToWishlist,
+      onDoubleTap: () {
+        setState(() {
+          videos[_currentPage]['in_wishlist'] = !videos[_currentPage]['in_wishlist'];
+          if (videos[_currentPage]['in_wishlist']) {
+            videos[_currentPage]['wishlisted'] += 1;
+          } else {
+            videos[_currentPage]['wishlisted'] -= 1;
+          }
+        });
+        addToWishlist(videos[_currentPage]['productId']);
+      },
       child: Scaffold(
         backgroundColor: Colors.black,
         body: PageView.builder(
@@ -116,12 +171,11 @@ class _ReelScreenState extends State<ReelScreen> {
           itemCount: videos.length + (isLoading ? 1 : 0),
           itemBuilder: (context, index) {
             if (index == videos.length) {
-              return Center(child: CircularProgressIndicator());
+              return const Center(child: CircularProgressIndicator());
             }
-
             final video = videos[index];
+            _currVideoId = video['productId'];
             final controller = _controllers[index];
-
             return Container(
               height: MediaQuery.of(context).size.height,
               child: Stack(
@@ -129,7 +183,7 @@ class _ReelScreenState extends State<ReelScreen> {
                   Positioned.fill(
                     child: controller.value.isInitialized
                         ? VideoPlayer(controller)
-                        : Center(child: CircularProgressIndicator()),
+                        : const Center(child: CircularProgressIndicator()),
                   ),
                   Positioned(
                     bottom: 50,
@@ -143,28 +197,31 @@ class _ReelScreenState extends State<ReelScreen> {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => ProductScreen(productId: video['productId']!),
+                                builder: (context) => ProductScreen(productId: video['productId']),
                               ),
                             );
                           },
                           child: Row(
                             children: [
-                              Text(
-                                video['productTitle']!,
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
+                              Flexible(
+                                child: Text(
+                                  video['productTitle']!,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
                               ),
-                              SizedBox(width: 8),
+                              const SizedBox(width: 8),
                               Container(
-                                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                                 decoration: BoxDecoration(
                                   border: Border.all(color: Colors.white),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
-                                child: Text(
+                                child: const Text(
                                   'view',
                                   style: TextStyle(color: Colors.white, fontSize: 12),
                                 ),
@@ -172,13 +229,13 @@ class _ReelScreenState extends State<ReelScreen> {
                             ],
                           ),
                         ),
-                        SizedBox(height: 5),
+                        const SizedBox(height: 5),
                         Text(
                           video['productDescription']!,
-                          style: TextStyle(color: Colors.white, fontSize: 14),
+                          style: const TextStyle(color: Colors.white, fontSize: 14),
                         ),
-                        SizedBox(height: 10),
-                        Text(
+                        const SizedBox(height: 10),
+                        const Text(
                           '🎵 Pump Up the Jam - Original Audio',
                           style: TextStyle(color: Colors.white70, fontSize: 12),
                         ),
@@ -189,14 +246,24 @@ class _ReelScreenState extends State<ReelScreen> {
                     right: 20,
                     bottom: 150,
                     child: GestureDetector(
-                      onTap: addToWishlist,
+                      onTap: () {
+                        addToWishlist(_currVideoId);
+                        setState(() {
+                          video['in_wishlist'] = !video['in_wishlist'];
+                          if(video['in_wishlist']) {
+                            video['wishlisted'] += 1;
+                          } else {
+                            video['wishlisted'] -= 1;
+                          }
+                        });
+                      },
                       child: Column(
                         children: [
-                          Icon(Icons.favorite, color: Colors.white, size: 30),
-                          SizedBox(height: 5),
+                          Icon(Icons.favorite, color: video['in_wishlist'] ? Colors.red : Colors.white, size: 30),
+                          const SizedBox(height: 5),
                           Text(
-                            '1.2K',
-                            style: TextStyle(color: Colors.white, fontSize: 14),
+                            '${video['wishlisted']}',
+                            style: const TextStyle(color: Colors.white, fontSize: 14),
                           ),
                         ],
                       ),

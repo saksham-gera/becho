@@ -1,8 +1,13 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+import 'package:share/share.dart';
 import 'dart:convert';
 import 'package:shimmer/shimmer.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProductScreen extends StatefulWidget {
   final String productId;
@@ -237,6 +242,90 @@ class _ProductScreenState extends State<ProductScreen> {
     }
   }
 
+  Future<String> createRedirectionURL(String redirectUrl) async {
+    final userId = await storage.read(key: 'userID');
+    print('User ID: $userId');
+    if (userId == null) {
+      throw Exception('Failed to create redirection URL. Missing userID.');
+    }
+
+    final apiUrl = 'https://bechoserver.vercel.app/commissions/createUserToken/$userId';
+    final response = await http.get(Uri.parse(apiUrl));
+    print('API Response: ${response.body}');
+    print('Response Status Code: ${response.statusCode}');
+
+    try {
+      print(json.decode(response.body));
+    } catch (e) {
+      print('Error decoding JSON: $e');
+    }
+
+    final userToken = json.decode(response.body)['token'];
+    print('User Token: $userToken');
+    if (userToken.isEmpty) {
+      throw Exception('User token is empty.');
+    }
+
+    String finalUrl =
+        'https://becho-redirect.vercel.app/$userToken?redirectUrl=${Uri.encodeComponent(redirectUrl)}';
+    print('Final URL: $finalUrl');
+    return finalUrl;
+  }
+
+  void openRedirectionURL(BuildContext context, String redirectUrl) async {
+    try {
+      final redirectionUrl = await createRedirectionURL(redirectUrl);
+
+      if (await canLaunchUrl(Uri.parse(redirectionUrl))) {
+        await launchUrl(Uri.parse(redirectionUrl));
+      } else {
+        throw Exception('Could not launch $redirectionUrl');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to open URL: $e')),
+      );
+    }
+  }
+  void shareProductDetails() async {
+    try {
+      final redirectionURL = await createRedirectionURL(productDetails?['link']);
+
+      final productTitle = productDetails?['title'] ?? 'Check out this product!';
+      final productImage = productDetails?['image_link'] ?? '';
+      final shareText = '$productTitle\n\n$redirectionURL\n\n';
+
+      if (productImage.isNotEmpty) {
+        final uri = Uri.parse(productImage);
+        final response = await http.get(uri);
+        if (response.statusCode == 200) {
+          final tempDir = await getTemporaryDirectory();
+          final tempFile = File('${tempDir.path}/product_image.png');
+          await tempFile.writeAsBytes(response.bodyBytes);
+
+          Share.shareFiles(
+            [tempFile.path],
+            text: shareText,
+            subject: 'Product Recommendation',
+          );
+
+          tempFile.delete();
+        } else {
+          throw Exception('Failed to download image');
+        }
+      } else {
+        Share.share(
+          shareText,
+          subject: 'Product Recommendation',
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to share product details: $e')),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -417,30 +506,26 @@ class _ProductScreenState extends State<ProductScreen> {
                   Row(
                     children: [
                       ElevatedButton(
-                        onPressed: () {
-                          // Handle Buy action
-                        },
+                        onPressed: () => openRedirectionURL(context, productDetails?['link']),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
                           padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                         ),
                         child: Text(
                           'Buy',
-                          style: TextStyle(color: Colors.white,fontSize: 18),
+                          style: TextStyle(color: Colors.white, fontSize: 18),
                         ),
                       ),
                       SizedBox(width: 8),
                       ElevatedButton(
-                        onPressed: () {
-                          // Handle Sell action
-                        },
+                        onPressed: shareProductDetails,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.black,
                           padding: EdgeInsets.symmetric(horizontal: 24, vertical: 16),
                         ),
                         child: Text(
                           'Sell',
-                          style: TextStyle(color: Colors.white,fontSize: 18),
+                          style: TextStyle(color: Colors.white, fontSize: 18),
                         ),
                       ),
                     ],

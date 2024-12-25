@@ -277,18 +277,17 @@ class _ExploreScreenState extends State<ExploreScreen> {
     );
   }
 
-  void _onCategorySelected(int categoryID) {
-    final category = ShopScreen.categories[categoryID];
-    _searchController.text = category; // Update search bar
-    _fetchProducts(query: category); // Fetch products for the selected category
+  void _onCategorySelected(String categoryTitle) {
+    _searchController.text = categoryTitle; // Update search bar
+    _fetchProducts(query: categoryTitle); // Fetch products for the selected category
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: showShopScreen
-          ? ShopScreen(onCategorySelected: _onCategorySelected)
-          : CustomScrollView(
+        ? ShopScreen(onCategorySelected: _onCategorySelected)
+        : CustomScrollView(
         slivers: [
           SliverAppBar(
             pinned: true,
@@ -374,28 +373,48 @@ class _ExploreScreenState extends State<ExploreScreen> {
   }
 }
 
-class ShopScreen extends StatelessWidget {
-  final void Function(int categoryID) onCategorySelected;
-  static const categories = [
-    'Electronics',
-    'Clothing',
-    'Home Appliances',
-    'Books',
-    'Toys',
-    'Groceries',
-    'Beauty Products',
-    'Sports Equipment',
-    'Gadgets',
-    'Furniture',
-    'Jewelry',
-    'Stationery',
-    'Gaming',
-    'Footwear',
-    'Bags',
-    'Accessories',
-  ];
+class ShopScreen extends StatefulWidget {
+  final void Function(String categoryTitle) onCategorySelected;
 
   ShopScreen({required this.onCategorySelected});
+
+  @override
+  _ShopScreenState createState() => _ShopScreenState();
+}
+
+class _ShopScreenState extends State<ShopScreen> {
+  List<dynamic> categories = [];
+  bool isLoading = true;
+  bool hasError = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchCategories();
+  }
+
+  Future<void> _fetchCategories() async {
+    final uri = Uri.https('bechoserver.vercel.app', '/category');
+    try {
+      final response = await http.get(uri);
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        setState(() {
+          categories = data;
+          isLoading = false;
+        });
+      } else {
+        throw Exception('Failed to fetch categories: ${response.body}');
+      }
+    } catch (error) {
+      print('Error fetching categories: $error');
+      setState(() {
+        isLoading = false;
+        hasError = true;
+      });
+    }
+  }
 
   Color _getRandomColor() {
     final random = Random();
@@ -409,6 +428,28 @@ class ShopScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return Center(child: CircularProgressIndicator());
+    }
+
+    if (hasError) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text(
+              'Failed to load categories',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            ElevatedButton(
+              onPressed: _fetchCategories,
+              child: Text('Retry'),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Column(
       children: [
         Padding(
@@ -430,8 +471,9 @@ class ShopScreen extends StatelessWidget {
             ),
             itemCount: categories.length,
             itemBuilder: (context, index) {
+              final category = categories[index];
               return GestureDetector(
-                onTap: () => onCategorySelected(index),
+                onTap: () => widget.onCategorySelected(category['title']),
                 child: Card(
                   color: _getRandomColor(),
                   elevation: 4,
@@ -440,7 +482,7 @@ class ShopScreen extends StatelessWidget {
                   ),
                   child: Center(
                     child: Text(
-                      categories[index],
+                      category['title'],
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 14,
