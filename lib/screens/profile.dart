@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'welcome.dart'; // Import your Welcome screen
+import 'package:shimmer/shimmer.dart';
 
 class ProfileScreen extends StatefulWidget {
   @override
@@ -25,6 +26,93 @@ class _ProfileScreenState extends State<ProfileScreen> {
   void initState() {
     super.initState();
     _loadUserData(); // Load user data on initialization
+  }
+
+  Widget shimmerPlaceholder() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        Shimmer.fromColors(
+          baseColor: Colors.grey.shade300,
+          highlightColor: Colors.grey.shade100,
+          child: Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    CircleAvatar(
+                      radius: 45,
+                      backgroundColor: Colors.grey.shade300,
+                    ),
+                    SizedBox(width: 25),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 150,
+                          height: 20,
+                          color: Colors.grey.shade300,
+                        ),
+                        SizedBox(height: 10),
+                        Container(
+                          width: 100,
+                          height: 15,
+                          color: Colors.grey.shade300,
+                        ),
+                      ],
+                    )
+                  ],
+                ),
+                SizedBox(height: 20),
+                Container(
+                  height: 15,
+                  width: double.infinity,
+                  color: Colors.grey.shade300,
+                ),
+                SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Container(
+                      width: 100,
+                      height: 50,
+                      color: Colors.grey.shade300,
+                    ),
+                    Container(
+                      width: 100,
+                      height: 50,
+                      color: Colors.grey.shade300,
+                    ),
+                  ],
+                ),
+                SizedBox(height: 30),
+                for (int i = 0; i < 5; i++)
+                  Column(
+                    children: [
+                      Container(
+                        height: 50,
+                        width: double.infinity,
+                        color: Colors.grey.shade300,
+                      ),
+                      SizedBox(height: 10),
+                    ],
+                  ),
+              ],
+            ),
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: TextButton.icon(
+            onPressed: ()=> showLogoutConfirmation(context),
+            icon: Icon(Icons.logout, color: Colors.red),
+            label: Text("Log out",
+                style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+          ),
+        ),
+      ],
+    );
   }
 
   Future<void> _loadUserData() async {
@@ -64,7 +152,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  Future<void> _logout() async {
+
+  Future<void> _logout(BuildContext context) async {
     await secureStorage.delete(key: 'authToken');
     Navigator.pushReplacement(
       context,
@@ -72,11 +161,76 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
+  void showLogoutConfirmation(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (BuildContext context) {
+        return Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Confirm Logout",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 10),
+              Text(
+                "Are you sure you want to log out?",
+                style: TextStyle(color: Colors.grey.shade600),
+                textAlign: TextAlign.center,
+              ),
+              SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () {
+                        Navigator.pop(context); // Close the BottomSheet
+                      },
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: Colors.black),
+                        backgroundColor: Colors.white,
+                      ),
+                      child: Text(
+                        "Cancel",
+                        style: TextStyle(color: Colors.black),
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 10),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () async {
+                        Navigator.pop(context); // Close the BottomSheet
+                        await _logout(context);
+                      },
+                      style: OutlinedButton.styleFrom(
+                        side: BorderSide(color: Colors.red),
+                      ),
+                      child: Text(
+                        "Log out",
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: isLoading
-          ? Center(child: CircularProgressIndicator())
+          ? shimmerPlaceholder()
           : Column(
         children: [
           Expanded(
@@ -153,7 +307,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: TextButton.icon(
-              onPressed: _logout,
+              onPressed: ()=> showLogoutConfirmation(context),
               icon: Icon(Icons.logout, color: Colors.red),
               label: Text("Log out",
                   style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),

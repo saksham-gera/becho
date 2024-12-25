@@ -91,8 +91,8 @@ class _ReelScreenState extends State<ReelScreen> {
             'productTitle': item['title'] ?? 'Awesome Product',
             'productId': item['product_id'],
             'productDescription': item['description'] ?? 'No description available',
-            'wishlisted': item['wishlisted'],
-            'in_wishlist' : item['in_wishlist'],
+            'wishlisted': item['wishlisted'] is int ? item['wishlisted'] : int.tryParse(item['wishlisted']?.toString() ?? '') ?? 0,
+            'in_wishlist': item['in_wishlist'] is bool ? item['in_wishlist'] : (item['in_wishlist']?.toString().toLowerCase() == 'true'),
           };
         }).toList();
 
@@ -154,11 +154,12 @@ class _ReelScreenState extends State<ReelScreen> {
     return GestureDetector(
       onDoubleTap: () {
         setState(() {
+          int currentWishlisted = int.tryParse(videos[_currentPage]['wishlisted'].toString()) ?? 0;
           videos[_currentPage]['in_wishlist'] = !videos[_currentPage]['in_wishlist'];
           if (videos[_currentPage]['in_wishlist']) {
-            videos[_currentPage]['wishlisted'] += 1;
+            videos[_currentPage]['wishlisted'] = currentWishlisted + 1;
           } else {
-            videos[_currentPage]['wishlisted'] -= 1;
+            videos[_currentPage]['wishlisted'] = currentWishlisted - 1;
           }
         });
         addToWishlist(videos[_currentPage]['productId']);
@@ -247,15 +248,16 @@ class _ReelScreenState extends State<ReelScreen> {
                     bottom: 150,
                     child: GestureDetector(
                       onTap: () {
-                        addToWishlist(_currVideoId);
                         setState(() {
-                          video['in_wishlist'] = !video['in_wishlist'];
-                          if(video['in_wishlist']) {
-                            video['wishlisted'] += 1;
+                          int currentWishlisted = int.tryParse(videos[_currentPage]['wishlisted'].toString()) ?? 0;
+                          videos[_currentPage]['in_wishlist'] = !videos[_currentPage]['in_wishlist'];
+                          if (videos[_currentPage]['in_wishlist']) {
+                            videos[_currentPage]['wishlisted'] = currentWishlisted + 1;
                           } else {
-                            video['wishlisted'] -= 1;
+                            videos[_currentPage]['wishlisted'] = currentWishlisted - 1;
                           }
                         });
+                        addToWishlist(_currVideoId);
                       },
                       child: Column(
                         children: [
