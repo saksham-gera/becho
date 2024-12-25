@@ -87,7 +87,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Row(
                   children: [
                     CircleAvatar(
-                      radius: 50,
+                      radius: 45,
                       backgroundImage: AssetImage('assets/profile_placeholder.png'),
                       onBackgroundImageError: (_, __) {
                         print('Error loading profile image');
