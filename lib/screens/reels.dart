@@ -98,7 +98,7 @@ class _ReelScreenState extends State<ReelScreen> {
 
         for (var i = 0; i < newVideos.length; i++) {
           final videoData = newVideos[i];
-          final controller = VideoPlayerController.network(videoData['videoUrl']);
+          final controller = VideoPlayerController.networkUrl(Uri.parse(videoData['videoUrl']));
 
           await controller.initialize();
           controller.setLooping(true);
