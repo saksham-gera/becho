@@ -1,10 +1,9 @@
 import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
-import 'package:share/share.dart';
+import 'package:share_plus/share_plus.dart';
 import 'dart:convert';
 import 'package:shimmer/shimmer.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -275,9 +274,9 @@ class _ProductScreenState extends State<ProductScreen> {
   void openRedirectionURL(BuildContext context, String redirectUrl) async {
     try {
       final redirectionUrl = await createRedirectionURL(redirectUrl);
-
-      if (await canLaunchUrl(Uri.parse(redirectionUrl))) {
-        await launchUrl(Uri.parse(redirectionUrl));
+      final Uri uri = Uri.parse(redirectionUrl);
+      if (await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+        print('Launched $redirectionUrl');
       } else {
         throw Exception('Could not launch $redirectionUrl');
       }
@@ -287,10 +286,10 @@ class _ProductScreenState extends State<ProductScreen> {
       );
     }
   }
+
   void shareProductDetails() async {
     try {
       final redirectionURL = await createRedirectionURL(productDetails?['link']);
-
       final productTitle = productDetails?['title'] ?? 'Check out this product!';
       final productImage = productDetails?['image_link'] ?? '';
       final shareText = '$productTitle\n\n$redirectionURL\n\n';
@@ -303,15 +302,17 @@ class _ProductScreenState extends State<ProductScreen> {
           final tempFile = File('${tempDir.path}/product_image.png');
           await tempFile.writeAsBytes(response.bodyBytes);
 
-          Share.shareFiles(
-            [tempFile.path],
+          Share.shareXFiles(
+            [XFile(tempFile.path)],
             text: shareText,
             subject: 'Product Recommendation',
           );
 
+          // Delay deletion or ensure sharing completes
+          await Future.delayed(Duration(seconds: 2));
           tempFile.delete();
         } else {
-          throw Exception('Failed to download image');
+          throw Exception('Failed to download image. Status: ${response.statusCode}');
         }
       } else {
         Share.share(
@@ -506,6 +507,7 @@ class _ProductScreenState extends State<ProductScreen> {
                   Row(
                     children: [
                       ElevatedButton(
+                        // onPressed: (){},
                         onPressed: () => openRedirectionURL(context, productDetails?['link']),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
@@ -518,6 +520,7 @@ class _ProductScreenState extends State<ProductScreen> {
                       ),
                       SizedBox(width: 8),
                       ElevatedButton(
+                        // onPressed: (){},
                         onPressed: shareProductDetails,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.black,
