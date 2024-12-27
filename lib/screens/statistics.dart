@@ -50,7 +50,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       endDate = DateTime(currentDate.year, currentDate.month, currentDate.day + 1);
     } else if (selectedTimeline == 'weekly') {
       startDate = currentDate.subtract(Duration(days: 7));
-      endDate = currentDate;
+      endDate = DateTime(currentDate.year, currentDate.month, currentDate.day + 1);
     } else if (selectedTimeline == 'monthly') {
       startDate = DateTime(currentDate.year, currentDate.month, 1);
       endDate = DateTime(currentDate.year, currentDate.month + 1, 1);
