@@ -1,4 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:intl/intl.dart';
 
 class StatisticsScreen extends StatefulWidget {
   @override
@@ -6,125 +10,161 @@ class StatisticsScreen extends StatefulWidget {
 }
 
 class _StatisticsScreenState extends State<StatisticsScreen> {
-  String selectedTimeline = 'Daily';
+  String selectedTimeline = 'daily';
   DateTime currentDate = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
-
-  // Dummy data for a month (30 days)
-  final Map<DateTime, Map<String, String>> dailyData = {
-    for (int i = 1; i <= 30; i++)
-      DateTime(2024, 12, i): {
-        'Sales': (1200 + i * 10).toString(),
-        'Commissions': (150 + i).toString(),
-        'SaleAmount': (10000 + i * 50).toString(),
-        'Clicks': '${10 + i}K'
-      }
+  Map<String, dynamic> currentData = {
+    'earnings': '0',
+    'Sales': '0',
+    'Commissions': '0',
+    'SaleAmount': '0',
+    'Clicks': '0',
   };
+  Map<String, dynamic> lifetimeStatistics = {
+    'earnings': '0',
+    'Sales': '0',
+    'Commissions': '0',
+    'SaleAmount': '0',
+    'Clicks': '0',
+  };
+  bool isLoading = true;
 
-  // Helper to get data for the current timeline
-  Map<String, String> getCurrentData() {
-    final normalizedDate = DateTime(currentDate.year, currentDate.month, currentDate.day);
+  FlutterSecureStorage _storage = FlutterSecureStorage();
 
-    if (selectedTimeline == 'Daily') {
-      return dailyData[normalizedDate] ?? {'Sales': '0', 'Commissions': '0', 'SaleAmount': '0', 'Clicks': '0'};
-    } else if (selectedTimeline == 'Weekly') {
-      final startOfWeek = normalizedDate.subtract(Duration(days: normalizedDate.weekday - 1));
-      final endOfWeek = startOfWeek.add(Duration(days: 6));
+  @override
+  void initState() {
+    super.initState();
+    fetchData();
+  }
 
-      int totalSales = 0, totalCommissions = 0, totalSaleAmount = 0, totalClicks = 0;
+  Future<void> fetchData() async {
+    setState(() {
+      isLoading = true;
+    });
 
-      for (int i = 0; i < 7; i++) {
-        final date = startOfWeek.add(Duration(days: i));
-        if (dailyData[date] != null) {
-          totalSales += int.parse(dailyData[date]!['Sales'] ?? '0');
-          totalCommissions += int.parse(dailyData[date]!['Commissions'] ?? '0');
-          totalSaleAmount += int.parse(dailyData[date]!['SaleAmount'] ?? '0');
-          totalClicks += int.parse(dailyData[date]!['Clicks']!.replaceAll('K', '')) * 1000;
-        }
+    final userId = await _storage.read(key: 'userID');
+    final DateFormat formatter = DateFormat('yyyy-MM-dd');
+
+    DateTime startDate, endDate;
+    if (selectedTimeline == 'daily') {
+      startDate = currentDate;
+      endDate = DateTime(currentDate.year, currentDate.month, currentDate.day + 1);
+    } else if (selectedTimeline == 'weekly') {
+      startDate = currentDate.subtract(Duration(days: 7));
+      endDate = currentDate;
+    } else if (selectedTimeline == 'monthly') {
+      startDate = DateTime(currentDate.year, currentDate.month, 1);
+      endDate = DateTime(currentDate.year, currentDate.month + 1, 1);
+    } else {
+      startDate = currentDate;
+      endDate = DateTime(currentDate.year, currentDate.month, currentDate.day + 1);
+    }
+
+    final formattedStartDate = formatter.format(startDate);
+    final formattedEndDate = formatter.format(endDate);
+
+    final url = Uri.parse(
+      'https://bechoserver.vercel.app/commissions?userId=$userId&startDate=$formattedStartDate&endDate=$formattedEndDate',
+    );
+
+    try {
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        final commissionData = responseData['commissionData'];
+        final lifetimeData = responseData['lifetimeData'];
+
+        setState(() {
+          currentData = {
+            'earnings': commissionData['total_earnings'].toString(),
+            'Sales': commissionData['total_sales_count'].toString(),
+            'Commissions': commissionData['total_commission'].toString(),
+            'SaleAmount': commissionData['total_sales_amount'].toString(),
+            'Clicks': commissionData['total_clicks_count'].toString(),
+          };
+
+          lifetimeStatistics = {
+            'earnings': lifetimeData['lifetime_earnings'].toString(),
+            'Sales': lifetimeData['lifetime_sales_count'].toString(),
+            'Commissions': lifetimeData['lifetime_commission'].toString(),
+            'SaleAmount': lifetimeData['lifetime_sales_amount'].toString(),
+            'Clicks': lifetimeData['lifetime_clicks_count'].toString(),
+          };
+        });
+      } else {
+        resetData();
       }
-
-      return {
-        'Sales': totalSales.toString(),
-        'Commissions': totalCommissions.toString(),
-        'SaleAmount': totalSaleAmount.toString(),
-        'Clicks': '${(totalClicks / 1000).round()}K'
-      };
-    } else if (selectedTimeline == 'Monthly') {
-      final month = currentDate.month;
-      final year = currentDate.year;
-
-      int totalSales = 0, totalCommissions = 0, totalSaleAmount = 0, totalClicks = 0;
-
-      dailyData.forEach((date, data) {
-        if (date.month == month && date.year == year) {
-          totalSales += int.parse(data['Sales'] ?? '0');
-          totalCommissions += int.parse(data['Commissions'] ?? '0');
-          totalSaleAmount += int.parse(data['SaleAmount'] ?? '0');
-          totalClicks += int.parse(data['Clicks']!.replaceAll('K', '')) * 1000;
-        }
-      });
-
-      return {
-        'Sales': totalSales.toString(),
-        'Commissions': totalCommissions.toString(),
-        'SaleAmount': totalSaleAmount.toString(),
-        'Clicks': '${(totalClicks / 1000).round()}K'
-      };
+    } catch (error) {
+      resetData();
     }
 
-    return {'Sales': '0', 'Commissions': '0', 'SaleAmount': '0', 'Clicks': '0'};
+    setState(() {
+      isLoading = false;
+    });
   }
 
-  int calculateTotalEarnings(Map<String, String> data) {
-    return int.parse(data['Sales']!) + int.parse(data['Commissions']!);
-  }
-
-  String getFormattedDate() {
-    if (selectedTimeline == 'Daily') {
-      return '${currentDate.day}/${currentDate.month}/${currentDate.year}';
-    } else if (selectedTimeline == 'Weekly') {
-      final startOfWeek = currentDate.subtract(Duration(days: currentDate.weekday - 1));
-      final endOfWeek = startOfWeek.add(Duration(days: 6));
-      return '${startOfWeek.day}/${startOfWeek.month} - ${endOfWeek.day}/${endOfWeek.month}';
-    } else if (selectedTimeline == 'Monthly') {
-      return '${currentDate.month}/${currentDate.year}';
-    }
-    return '';
+  void resetData() {
+    setState(() {
+      currentData = {
+        'earnings': '0',
+        'Sales': '0',
+        'Commissions': '0',
+        'SaleAmount': '0',
+        'Clicks': '0',
+      };
+      lifetimeStatistics = {
+        'earnings': '0',
+        'Sales': '0',
+        'Commissions': '0',
+        'SaleAmount': '0',
+        'Clicks': '0',
+      };
+    });
   }
 
   void changeTimeline(String timeline) {
     setState(() {
       selectedTimeline = timeline;
     });
+    fetchData();
   }
 
   void changeDate(bool isNext) {
     setState(() {
-      if (selectedTimeline == 'Daily') {
-        currentDate = DateTime(
-          currentDate.year,
-          currentDate.month,
-          currentDate.day + (isNext ? 1 : -1),
-        );
-      } else if (selectedTimeline == 'Weekly') {
-        currentDate = DateTime(
-          currentDate.year,
-          currentDate.month,
-          currentDate.day + (isNext ? 7 : -7),
-        );
-      } else if (selectedTimeline == 'Monthly') {
-        currentDate = DateTime(
-          currentDate.year,
-          currentDate.month + (isNext ? 1 : -1),
-          1,
-        );
+      if (isNext && currentDate.isBefore(DateTime.now())) {
+        if (selectedTimeline == 'daily') {
+          currentDate = currentDate.add(Duration(days: 1));
+        } else if (selectedTimeline == 'weekly') {
+          currentDate = currentDate.add(Duration(days: 7));
+        } else if (selectedTimeline == 'monthly') {
+          currentDate = DateTime(currentDate.year, currentDate.month + 1, 1);
+        }
+      } else if (!isNext) {
+        if (selectedTimeline == 'daily') {
+          currentDate = currentDate.add(Duration(days: -1));
+        } else if (selectedTimeline == 'weekly') {
+          currentDate = currentDate.add(Duration(days: -7));
+        } else if (selectedTimeline == 'monthly') {
+          currentDate = DateTime(currentDate.year, currentDate.month - 1, 1);
+        }
       }
     });
+
+    if (currentDate.isAfter(DateTime.now())) {
+      currentDate = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
+    }
+
+    fetchData();
+  }
+
+  String calculateTotalEarnings() {
+    double total = double.parse(lifetimeStatistics['earnings']!);
+    return total.toStringAsFixed(0); // Removes decimals
   }
 
   @override
   Widget build(BuildContext context) {
-    final currentData = getCurrentData();
-    final totalEarnings = calculateTotalEarnings(currentData);
+    final totalEarnings = calculateTotalEarnings();
 
     return Scaffold(
       body: SafeArea(
@@ -147,7 +187,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Total Earnings',
+                          'Lifetime Earnings',
                           style: TextStyle(
                             color: Colors.white,
                             fontSize: 18,
@@ -168,10 +208,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        buildSummaryColumn('Sales', currentData['Sales']!),
-                        buildSummaryColumn('Commissions', currentData['Commissions']!),
-                        buildSummaryColumn('Sale Amount', currentData['SaleAmount']!),
-                        buildSummaryColumn('Clicks', currentData['Clicks']!),
+                        buildSummaryColumn('Sales', lifetimeStatistics['Sales']!),
+                        buildSummaryColumn('Commissions', lifetimeStatistics['Commissions']!),
+                        buildSummaryColumn('Sales Amount', lifetimeStatistics['SaleAmount']!),
+                        buildSummaryColumn('Clicks', lifetimeStatistics['Clicks']!),
                       ],
                     ),
                   ],
@@ -181,9 +221,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  buildTimelineButton('Weekly'),
-                  buildTimelineButton('Daily'),
-                  buildTimelineButton('Monthly'),
+                  buildTimelineButton('weekly'),
+                  buildTimelineButton('daily'),
+                  buildTimelineButton('monthly'),
                 ],
               ),
               SizedBox(height: 10),
@@ -195,7 +235,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                     onPressed: () => changeDate(false),
                   ),
                   Text(
-                    getFormattedDate(),
+                    '${currentDate.day}/${currentDate.month}/${currentDate.year}',
                     style: TextStyle(
                       color: Color(0xFF6E6E73),
                       fontSize: 14,
@@ -208,16 +248,19 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
                 ],
               ),
               SizedBox(height: 20),
+              if(isLoading)
+                Center(child: CircularProgressIndicator())
+              else
               Expanded(
                 child: GridView.count(
                   crossAxisCount: 2,
                   crossAxisSpacing: 16,
                   mainAxisSpacing: 16,
                   children: [
-                    buildStatCard('Sales', currentData['Sales']!, 'Goal met', true),
-                    buildStatCard('Commissions', currentData['Commissions']!, 'Goal met', true),
-                    buildStatCard('Sale Amount', currentData['SaleAmount']!, 'Goal met', true),
-                    buildStatCard('Clicks', currentData['Clicks']!, 'Goal met', true),
+                    buildStatCard('Total Sales Count', currentData['Sales']!, 'Goal met', true),
+                    buildStatCard('Total Commissions', currentData['Commissions']!, 'Goal met', true),
+                    buildStatCard('Total Sale Amount', currentData['SaleAmount']!, 'Goal met', true),
+                    buildStatCard('Total Clicks Count', currentData['Clicks']!, 'Goal met', true),
                   ],
                 ),
               ),
@@ -259,7 +302,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           borderRadius: BorderRadius.circular(20.0),
         ),
         child: Text(
-          timeline,
+          timeline.capitalize(),
           style: TextStyle(
             color: selectedTimeline == timeline ? Colors.black : Color(0xFF6E6E73),
             fontSize: 16,
@@ -269,7 +312,56 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
       ),
     );
   }
-
+  Widget buildWideStatCard(String title, String value, String description, bool isPositive) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Color(0xFF2C2C2E),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            Expanded(
+              flex: 2,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(color: Color(0xFF6E6E73), fontSize: 14),
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    value,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    description,
+                    style: TextStyle(
+                      color: isPositive ? Colors.greenAccent : Colors.redAccent,
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              isPositive ? Icons.arrow_upward : Icons.arrow_downward,
+              color: isPositive ? Colors.greenAccent : Colors.redAccent,
+              size: 32,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
   Widget buildStatCard(String title, String value, String description, bool isPositive) {
     return Container(
       decoration: BoxDecoration(
@@ -306,5 +398,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
         ),
       ),
     );
+  }
+}
+
+extension StringExtension on String {
+  String capitalize() {
+    return "${this[0].toUpperCase()}${substring(1)}";
   }
 }
