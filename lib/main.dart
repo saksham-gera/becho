@@ -1,7 +1,19 @@
+import 'package:becho/notification_handler.dart';
 import 'package:becho/screens/splash.dart';
 import 'package:flutter/material.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e) {
+    print('Firebase initialization error: $e');
+  }
+  NotificationHandler().initialize();
   runApp(const MyApp());
 }
 
@@ -15,24 +27,23 @@ class MyApp extends StatelessWidget {
       title: 'Becho',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.black),
-        // colorScheme: ColorScheme.fromSeed(seedColor: const Color(0x202138)),
         useMaterial3: true,
         textTheme: TextTheme(
-          displayLarge: TextStyle(color: Colors.black), // For large text elements
-          displayMedium: TextStyle(color: Colors.black), // For medium text elements
-          displaySmall: TextStyle(color: Colors.black), // For small text elements
-          headlineLarge: TextStyle(color: Colors.black), // For large headings
-          headlineMedium: TextStyle(color: Colors.black), // For medium headings
-          headlineSmall: TextStyle(color: Colors.black), // For small headings
-          titleLarge: TextStyle(color: Colors.black), // For large title text
-          titleMedium: TextStyle(color: Colors.black), // For medium title text
-          titleSmall: TextStyle(color: Colors.black), // For small title text
-          bodyLarge: TextStyle(color: Colors.black), // For large body text
-          bodyMedium: TextStyle(color: Colors.black), // For medium body text
-          bodySmall: TextStyle(color: Colors.black), // For small body text
-          labelLarge: TextStyle(color: Colors.black), // For large label text (e.g., buttons)
-          labelMedium: TextStyle(color: Colors.black), // For medium label text
-          labelSmall: TextStyle(color: Colors.black), // For small label text
+          displayLarge: TextStyle(color: Colors.black),
+          displayMedium: TextStyle(color: Colors.black),
+          displaySmall: TextStyle(color: Colors.black),
+          headlineLarge: TextStyle(color: Colors.black),
+          headlineMedium: TextStyle(color: Colors.black),
+          headlineSmall: TextStyle(color: Colors.black),
+          titleLarge: TextStyle(color: Colors.black),
+          titleMedium: TextStyle(color: Colors.black),
+          titleSmall: TextStyle(color: Colors.black),
+          bodyLarge: TextStyle(color: Colors.black),
+          bodyMedium: TextStyle(color: Colors.black),
+          bodySmall: TextStyle(color: Colors.black),
+          labelLarge: TextStyle(color: Colors.black),
+          labelMedium: TextStyle(color: Colors.black),
+          labelSmall: TextStyle(color: Colors.black),
         ),
       ),
       home: const SplashScreen(),

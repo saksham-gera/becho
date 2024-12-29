@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "543392908598",
+    "project_id": "becho-60838",
+    "storage_bucket": "becho-60838.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:543392908598:android:8b6645c81a21a2fb355f97",
+        "android_client_info": {
+          "package_name": "com.geras.becho"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCSRUKctav8d5p_dcWf2s6YAVd3pa-NGs8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
